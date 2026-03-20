@@ -138,6 +138,7 @@ function renderAll() {
 // ═══════════════════════════════════════
 function syncBar(active) {
   const b = document.getElementById('sync-bar');
+  if (!b) return;
   b.classList.toggle('active', active);
   b.classList.toggle('done', !active);
   if (!active) setTimeout(() => b.classList.remove('done'), 600);
