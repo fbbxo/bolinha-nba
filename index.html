@@ -1,253 +1,442 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bolinha NBA 2025</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolinha NBA 2025</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08080e;--surface:#0f0f18;--card:#13131e;--card2:#1a1a28;
+  --border:#252535;--border2:#303048;
+  --red:#c8102e;--red2:#e8213f;--red-glow:rgba(200,16,46,.3);
+  --blue:#1d428a;--blue2:#2d5aaa;--blue-glow:rgba(29,66,138,.3);
+  --gold:#fdb927;--gold2:#ffe060;--gold-glow:rgba(253,185,39,.25);
+  --green:#22c55e;--purple:#9333ea;--neg:#ef4444;
+  --text:#e2e2f0;--muted:#606080;--muted2:#9090b8;--white:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 60% 60% at 10% 40%,rgba(200,16,46,.06) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 60% at 90% 60%,rgba(29,66,138,.06) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 40% at 50% 0%,rgba(253,185,39,.04) 0%,transparent 50%);
+  pointer-events:none;z-index:0;}
+
+/* ── SYNC BAR ── */
+.sync-bar{position:fixed;top:0;left:0;right:0;z-index:200;height:3px;background:var(--gold);
+  transform:scaleX(0);transform-origin:left;transition:transform .3s,opacity .5s;}
+.sync-bar.active{transform:scaleX(1);}
+.sync-bar.done{opacity:0;}
+
+/* ── LOADING ── */
+.loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s;}
+.loading-overlay.hidden{opacity:0;pointer-events:none;}
+.loading-spinner{width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--gold);
+  border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:4px;color:var(--muted);}
+
+/* ── LOGIN SCREEN ── */
+.login-screen{position:fixed;inset:0;z-index:400;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  transition:opacity .3s;}
+.login-screen.hidden{opacity:0;pointer-events:none;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:40px 36px;width:100%;max-width:420px;text-align:center;}
+.login-logo{font-size:48px;margin-bottom:12px;filter:drop-shadow(0 0 20px var(--gold-glow));}
+.login-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;
+  background:linear-gradient(135deg,var(--gold),#fff5cc,var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:4px;}
+.login-sub{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:3px;
+  color:var(--muted);margin-bottom:32px;}
+.login-field{margin-bottom:16px;text-align:left;}
+.login-field label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;
+  color:var(--muted);display:block;margin-bottom:6px;}
+.login-field input{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;
+  padding:12px 14px;outline:none;transition:border-color .2s;}
+.login-field input:focus{border-color:var(--gold);}
+.login-field input[type="password"]{letter-spacing:4px;font-size:20px;}
+.login-hint{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;
+  color:var(--muted);margin-top:5px;}
+.login-btn{width:100%;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;
+  padding:14px;border-radius:8px;border:none;background:var(--gold);color:#000;
+  cursor:pointer;transition:all .2s;margin-top:8px;}
+.login-btn:hover{background:var(--gold2);transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glow);}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.login-error{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:1px;
+  color:var(--neg);margin-top:12px;min-height:18px;}
+.login-footer{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;
+  color:var(--muted);margin-top:20px;line-height:1.6;}
+
+/* ── LOCKED BANNER ── */
+.locked-banner{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;
+  padding:10px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;color:var(--neg);}
+.locked-banner.hidden{display:none;}
+
+/* ── HEADER ── */
+header{position:relative;z-index:10;text-align:center;padding:26px 20px 16px;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:8px;color:var(--muted);margin-bottom:4px;}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,6vw,64px);letter-spacing:2px;line-height:.9;
+  background:linear-gradient(135deg,var(--gold) 0%,#fff5cc 45%,var(--gold) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:5px;color:var(--muted);margin-top:7px;}
+.header-meta{margin-top:10px;display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;}
+.user-chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);
+  border:1px solid var(--border);border-radius:20px;padding:5px 14px;}
+.user-chip-avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:11px;color:#fff;}
+.user-chip-name{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--text);}
+.user-chip-out{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;
+  color:var(--muted);cursor:pointer;border:none;background:transparent;padding:0;transition:color .15s;}
+.user-chip-out:hover{color:var(--neg);}
+.online-dot{display:inline-flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;letter-spacing:2px;color:var(--muted);}
+.online-dot span{width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 6px var(--green);animation:pulse 2s infinite;}
+.online-dot span.offline{background:var(--neg);box-shadow:none;animation:none;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.tabs{display:flex;justify-content:center;flex-wrap:wrap;gap:0;margin:18px auto 0;
+  background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;width:fit-content;}
+.tab{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  padding:10px 18px;cursor:pointer;border:none;background:transparent;color:var(--muted);
+  transition:all .2s;border-right:1px solid var(--border);}
+.tab:last-child{border-right:none;}
+.tab.active{background:var(--red);color:#fff;}
+.tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.04);}
+
+/* ── MAIN ── */
+main{position:relative;z-index:5;max-width:1440px;margin:0 auto;padding:26px 16px 80px;}
+.section{display:none;}.section.active{display:block;}
+.sec-head{text-align:center;margin-bottom:28px;}
+.sec-head h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(24px,4vw,40px);letter-spacing:3px;color:var(--white);}
+.sec-head p{color:var(--muted);font-size:12px;margin-top:5px;font-family:'Barlow Condensed',sans-serif;letter-spacing:2px;}
+hr.div{border:none;border-top:1px solid var(--border);margin:32px 0;}
+
+.apos-bar{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 16px;
+  margin-bottom:22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.apos-bar label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;color:var(--muted);white-space:nowrap;}
+.cur-user-badge{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--gold);}
+
+.rules-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;
+  margin-bottom:22px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;}
+.rule-item{display:flex;align-items:center;gap:7px;}
+.rb{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--gold);}
+.rb.neg{color:var(--neg);}
+.rt{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted2);}
+
+/* PLAY-IN */
+.pi-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:40px;}
+@media(max-width:660px){.pi-grid{grid-template-columns:1fr;}}
+.conf-block{display:flex;flex-direction:column;gap:12px;}
+.conf-label{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:8px;}
+.conf-label.west{color:var(--red);text-shadow:0 0 16px var(--red-glow);}
+.conf-label.east{color:#5a9fe0;text-shadow:0 0 16px var(--blue-glow);}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:transform .2s;}
+.mc:hover{transform:translateY(-2px);}
+.mc.west{border-top:3px solid var(--red);}
+.mc.east{border-top:3px solid var(--blue2);}
+.mh{padding:8px 13px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--border);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;font-weight:700;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:center;}
+.pb{background:var(--gold);color:#000;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:1px;}
+.tr{display:flex;align-items:center;padding:11px 13px;cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;gap:11px;}
+.tr:last-of-type{border-bottom:none;}
+.tr:hover{background:rgba(255,255,255,.04);}
+.tr.locked-row{cursor:not-allowed;opacity:.7;}
+.tr.sw{background:rgba(200,16,46,.14);border-left:3px solid var(--red);}
+.tr.se{background:rgba(29,66,138,.18);border-left:3px solid #5a9fe0;}
+.ts{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--muted);min-width:24px;text-align:center;}
+.tl{width:34px;height:34px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.ti{flex:1;}
+.tn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;}
+.trec{font-size:10px;color:var(--muted);margin-top:1px;}
+.pdot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;}
+.tr.sw .pdot{background:var(--red);border-color:var(--red);}
+.tr.se .pdot{background:var(--blue2);border-color:var(--blue2);}
+
+/* PRÉ-PLAYOFFS */
+.pre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:32px;}
+.pre-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.pre-card.gold-card{border-top:3px solid var(--gold);}
+.pre-card.purple-card{border-top:3px solid var(--purple);}
+.pre-card-head{padding:10px 14px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--border);
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;font-weight:700;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:center;}
+.pre-card-body{padding:14px;}
+.pre-team-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.pre-tbtn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;padding:8px 10px;
+  border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted2);
+  cursor:pointer;transition:all .15s;text-align:left;display:flex;align-items:center;gap:6px;}
+.pre-tbtn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+.pre-tbtn:disabled{cursor:not-allowed;opacity:.6;}
+.pre-tbtn.sel-gold{background:rgba(253,185,39,.15);border-color:var(--gold);color:var(--gold);}
+.pre-tbtn.sel-purple{background:rgba(147,51,234,.15);border-color:var(--purple);color:#c084fc;}
+.bonus-tag{font-family:'Bebas Neue',sans-serif;font-size:13px;}
+.bonus-tag.pos{color:var(--gold);}
+.bonus-tag.neg-tag{color:var(--neg);}
+
+/* BRACKET */
+.bracket-scroll{overflow-x:auto;padding-bottom:16px;}
+.bracket-outer{display:grid;grid-template-columns:repeat(7,1fr);gap:0;min-width:980px;align-items:start;}
+@media(max-width:960px){.bracket-outer{min-width:720px;}}
+.b-col{display:flex;flex-direction:column;align-items:stretch;padding:0 4px;}
+.b-rt{font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:3px;color:var(--muted);
+  text-align:center;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.sb{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:5px 0;}
+.sb.west{border-left:3px solid var(--red);}
+.sb.east{border-left:3px solid var(--blue2);}
+.sb.champ{border-left:3px solid var(--gold);}
+.bt{display:flex;align-items:center;gap:6px;padding:6px 9px;cursor:pointer;
+  transition:background .15s;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;
+  border-bottom:1px solid rgba(255,255,255,.05);}
+@media(max-width:960px){.bt{font-size:10px;padding:5px 7px;}}
+.bt:last-of-type{border-bottom:none;}
+.bt:hover{background:rgba(255,255,255,.05);}
+.bt.locked-bt{cursor:not-allowed;}
+.bt.ww{background:rgba(200,16,46,.16);color:#ff8090;}
+.bt.we{background:rgba(29,66,138,.18);color:#80b8f0;}
+.bt.wc{background:rgba(253,185,39,.14);color:var(--gold);}
+.bsd{font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--muted);min-width:14px;}
+.bname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bsc{font-size:9px;opacity:.65;margin-left:2px;}
+.sp{padding:7px 9px;background:var(--card2);border-top:1px solid var(--border);display:none;}
+.sp.open{display:block;}
+.sp-lbl{font-family:'Barlow Condensed',sans-serif;font-size:8px;letter-spacing:3px;color:var(--muted);margin-bottom:5px;}
+.sp-btns{display:flex;gap:4px;}
+.spb{font-family:'Bebas Neue',sans-serif;font-size:12px;padding:4px 9px;border-radius:4px;
+  border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;transition:all .15s;}
+.spb:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+.spb:disabled{cursor:not-allowed;opacity:.5;}
+.spb.asc{background:var(--gold);color:#000;border-color:var(--gold);}
+.finals-center{display:flex;flex-direction:column;align-items:center;padding-top:2px;}
+.ftrophy{font-size:38px;filter:drop-shadow(0 0 14px var(--gold-glow));margin-bottom:3px;}
+.flbl{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:4px;color:var(--gold);margin-bottom:7px;}
+.champ-reveal{text-align:center;margin-top:7px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--gold);}
+
+/* RANKING */
+.rank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;}
+.rk-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;
+  display:flex;align-items:flex-start;gap:12px;transition:border-color .2s;}
+.rk-card:hover{border-color:var(--border2);}
+.rk-card.rk-me{border-color:var(--gold);background:rgba(253,185,39,.04);}
+.rk-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--muted);min-width:34px;text-align:center;padding-top:2px;}
+.rk-num.gold{color:var(--gold);text-shadow:0 0 10px var(--gold-glow);}
+.rk-num.silver{color:#c0c0c0;}
+.rk-num.bronze{color:#cd7f32;}
+.rk-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:19px;color:#fff;flex-shrink:0;}
+.rk-info{flex:1;min-width:0;}
+.rk-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;}
+.rk-detail{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.7;}
+.rk-detail span{color:var(--muted2);}
+.rk-detail .neg-pts{color:var(--neg);}
+.rk-right{text-align:right;flex-shrink:0;}
+.rk-score{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);}
+.rk-exact{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:2px;}
+.tie-badge{display:inline-block;background:var(--surface);border:1px solid var(--border2);
+  border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2px;
+  color:var(--muted);padding:2px 6px;margin-left:6px;vertical-align:middle;}
+.me-badge{display:inline-block;background:rgba(253,185,39,.15);border:1px solid var(--gold);
+  border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:2px;
+  color:var(--gold);padding:2px 6px;margin-left:6px;vertical-align:middle;}
+
+.btn{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;padding:9px 22px;border-radius:6px;border:none;cursor:pointer;transition:all .2s;}
+.btn-gold{background:var(--gold);color:#000;}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-1px);box-shadow:0 4px 16px var(--gold-glow);}
+.btn-gold:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+
+.toast{position:fixed;bottom:26px;right:26px;background:var(--card);border:1px solid var(--gold);
+  border-radius:8px;padding:11px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;
+  color:var(--gold);z-index:1000;transform:translateY(60px);opacity:0;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+</style>
 </head>
 <body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">CONECTANDO...</div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🏀</div>
+    <div class="login-title">BOLINHA NBA</div>
+    <div class="login-sub">PLAY-IN & PLAYOFFS 2025</div>
+    <div class="login-field">
+      <label>SEU NOME</label>
+      <input type="text" id="login-name" placeholder="Ex: João Silva" maxlength="30" autocomplete="off">
+    </div>
+    <div class="login-field">
+      <label>PIN (4 DÍGITOS)</label>
+      <input type="password" id="login-pin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+      <div class="login-hint">Na primeira vez cria seu PIN. Nas próximas, use o mesmo para acessar suas apostas em qualquer dispositivo.</div>
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">ENTRAR →</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-footer">Suas apostas ficam salvas na nuvem 🔒</div>
+  </div>
+</div>
+
+<!-- SYNC BAR -->
+<div class="sync-bar" id="sync-bar"></div>
 
 <header>
   <div class="eyebrow">NBA • 2024-25</div>
   <h1>BOLINHA NBA</h1>
-  <p class="subtitle">PLAY-IN • PRÉ-PLAYOFFS • BRACKET • SÉRIES</p>
-  <a href="admin.html" class="admin-link">⚙ PAINEL ADMIN</a>
+  <p class="subtitle">PLAY-IN • PRÉ-PLAYOFFS • PLAYOFFS</p>
+  <div class="header-meta">
+    <div class="user-chip">
+      <div class="user-chip-avatar" id="hdr-avatar">?</div>
+      <span class="user-chip-name" id="hdr-name">—</span>
+      <button class="user-chip-out" onclick="doLogout()" title="Sair">✕</button>
+    </div>
+    <div class="online-dot"><span id="conn-dot"></span><span id="conn-label">CONECTANDO</span></div>
+  </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('playin',this)">PLAY-IN</button>
     <button class="tab" onclick="showTab('pre',this)">PRÉ-PLAYOFFS</button>
     <button class="tab" onclick="showTab('playoffs',this)">PLAYOFFS</button>
-    <button class="tab" onclick="showTab('resultados',this)">RESULTADOS</button>
     <button class="tab" onclick="showTab('ranking',this)">PLACAR</button>
-    <button class="tab" onclick="showTab('config',this)">APOSTADORES</button>
   </div>
 </header>
 
 <main>
 
-  <!-- ════════ PLAY-IN ════════ -->
-  <section id="playin" class="section active">
-    <div class="sec-head">
-      <h2>Play-In Tournament</h2>
-      <p>QUEM AVANÇA PARA O 7º E 8º SEED — SEM PLACAR DE SÉRIE</p>
-    </div>
-    <div class="apos-bar">
-      <label>APOSTADOR</label>
-      <select id="pi-sel" onchange="loadPlayin()"><option value="">— selecione —</option></select>
-    </div>
-    <div class="rules-box">
-      <div class="rule-item"><span class="rb">1 PT</span><span class="rt">ACERTAR VENCEDOR (JOGOS 1 E 2)</span></div>
-      <div class="rule-item"><span class="rb">2 PTS</span><span class="rt">ACERTAR VENCEDOR (JOGO DECISIVO)</span></div>
-    </div>
-    <div class="pi-grid">
-      <!-- OESTE -->
-      <div class="conf-block">
-        <div class="conf-label west">CONFERÊNCIA OESTE</div>
-        <div class="mc west">
-          <div class="mh"><span>JOGO 1 — 7º vs 8º SEED</span><span class="pb">1 PT</span></div>
-          <div class="tr" data-pi="w78" data-idx="0" data-conf="west" onclick="piPick(this)">
-            <span class="ts">7</span><div class="tl">⚡</div>
-            <div class="ti"><div class="tn">Oklahoma City Thunder</div><div class="trec">68-14</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="w78" data-idx="1" data-conf="west" onclick="piPick(this)">
-            <span class="ts">8</span><div class="tl">🌉</div>
-            <div class="ti"><div class="tn">Golden State Warriors</div><div class="trec">48-34</div></div>
-            <div class="pdot"></div>
-          </div>
+<!-- PLAY-IN -->
+<section id="playin" class="section active">
+  <div class="sec-head"><h2>Play-In Tournament</h2><p>QUEM AVANÇA PARA O 7º E 8º SEED</p></div>
+  <div class="locked-banner hidden" id="pi-locked-banner">🔒 APOSTAS ENCERRADAS PELO ADMIN — MODO VISUALIZAÇÃO</div>
+  <div class="apos-bar">
+    <label>SUAS APOSTAS —</label>
+    <span class="cur-user-badge" id="pi-user-badge">—</span>
+  </div>
+  <div class="rules-box">
+    <div class="rule-item"><span class="rb">1 PT</span><span class="rt">ACERTAR VENCEDOR (JOGOS 1 E 2)</span></div>
+    <div class="rule-item"><span class="rb">2 PTS</span><span class="rt">ACERTAR VENCEDOR (JOGO DECISIVO)</span></div>
+  </div>
+  <div class="pi-grid">
+    <div class="conf-block">
+      <div class="conf-label west">CONFERÊNCIA OESTE</div>
+      <div class="mc west">
+        <div class="mh"><span>JOGO 1 — 7º vs 8º SEED</span><span class="pb">1 PT</span></div>
+        <div class="tr" data-pi="w78" data-idx="0" data-conf="west" onclick="piPick(this)">
+          <span class="ts" id="pi-w7-seed">7</span><div class="tl" id="pi-w7-logo">⚡</div>
+          <div class="ti"><div class="tn" id="pi-w7-name">OKC Thunder</div></div><div class="pdot"></div>
         </div>
-        <div class="mc west">
-          <div class="mh"><span>JOGO 2 — 9º vs 10º SEED</span><span class="pb">1 PT</span></div>
-          <div class="tr" data-pi="w910" data-idx="0" data-conf="west" onclick="piPick(this)">
-            <span class="ts">9</span><div class="tl">🐻</div>
-            <div class="ti"><div class="tn">Memphis Grizzlies</div><div class="trec">45-37</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="w910" data-idx="1" data-conf="west" onclick="piPick(this)">
-            <span class="ts">10</span><div class="tl">🌵</div>
-            <div class="ti"><div class="tn">Phoenix Suns</div><div class="trec">42-40</div></div>
-            <div class="pdot"></div>
-          </div>
-        </div>
-        <div class="mc west">
-          <div class="mh"><span>JOGO DECISIVO — 8º SEED OESTE</span><span class="pb">2 PTS</span></div>
-          <div class="tr" data-pi="w3" data-idx="0" data-conf="west" onclick="piPick(this)">
-            <span class="ts">?</span><div class="tl">❓</div>
-            <div class="ti"><div class="tn">Vencedor Jogo 2</div><div class="trec">disputa 8º seed</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="w3" data-idx="1" data-conf="west" onclick="piPick(this)">
-            <span class="ts">?</span><div class="tl">❓</div>
-            <div class="ti"><div class="tn">Perdedor Jogo 1</div><div class="trec">disputa 8º seed</div></div>
-            <div class="pdot"></div>
-          </div>
+        <div class="tr" data-pi="w78" data-idx="1" data-conf="west" onclick="piPick(this)">
+          <span class="ts" id="pi-w8-seed">8</span><div class="tl" id="pi-w8-logo">🌉</div>
+          <div class="ti"><div class="tn" id="pi-w8-name">Golden State Warriors</div></div><div class="pdot"></div>
         </div>
       </div>
-      <!-- LESTE -->
-      <div class="conf-block">
-        <div class="conf-label east">CONFERÊNCIA LESTE</div>
-        <div class="mc east">
-          <div class="mh"><span>JOGO 1 — 7º vs 8º SEED</span><span class="pb">1 PT</span></div>
-          <div class="tr" data-pi="e78" data-idx="0" data-conf="east" onclick="piPick(this)">
-            <span class="ts">7</span><div class="tl">🏁</div>
-            <div class="ti"><div class="tn">Indiana Pacers</div><div class="trec">50-32</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="e78" data-idx="1" data-conf="east" onclick="piPick(this)">
-            <span class="ts">8</span><div class="tl">🌊</div>
-            <div class="ti"><div class="tn">Miami Heat</div><div class="trec">46-36</div></div>
-            <div class="pdot"></div>
-          </div>
+      <div class="mc west">
+        <div class="mh"><span>JOGO 2 — 9º vs 10º SEED</span><span class="pb">1 PT</span></div>
+        <div class="tr" data-pi="w910" data-idx="0" data-conf="west" onclick="piPick(this)">
+          <span class="ts" id="pi-w9-seed">9</span><div class="tl" id="pi-w9-logo">🐻</div>
+          <div class="ti"><div class="tn" id="pi-w9-name">Memphis Grizzlies</div></div><div class="pdot"></div>
         </div>
-        <div class="mc east">
-          <div class="mh"><span>JOGO 2 — 9º vs 10º SEED</span><span class="pb">1 PT</span></div>
-          <div class="tr" data-pi="e910" data-idx="0" data-conf="east" onclick="piPick(this)">
-            <span class="ts">9</span><div class="tl">🏁</div>
-            <div class="ti"><div class="tn">Chicago Bulls</div><div class="trec">40-42</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="e910" data-idx="1" data-conf="east" onclick="piPick(this)">
-            <span class="ts">10</span><div class="tl">🦅</div>
-            <div class="ti"><div class="tn">Atlanta Hawks</div><div class="trec">38-44</div></div>
-            <div class="pdot"></div>
-          </div>
+        <div class="tr" data-pi="w910" data-idx="1" data-conf="west" onclick="piPick(this)">
+          <span class="ts" id="pi-w10-seed">10</span><div class="tl" id="pi-w10-logo">🌵</div>
+          <div class="ti"><div class="tn" id="pi-w10-name">Phoenix Suns</div></div><div class="pdot"></div>
         </div>
-        <div class="mc east">
-          <div class="mh"><span>JOGO DECISIVO — 8º SEED LESTE</span><span class="pb">2 PTS</span></div>
-          <div class="tr" data-pi="e3" data-idx="0" data-conf="east" onclick="piPick(this)">
-            <span class="ts">?</span><div class="tl">❓</div>
-            <div class="ti"><div class="tn">Vencedor Jogo 2</div><div class="trec">disputa 8º seed</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="e3" data-idx="1" data-conf="east" onclick="piPick(this)">
-            <span class="ts">?</span><div class="tl">❓</div>
-            <div class="ti"><div class="tn">Perdedor Jogo 1</div><div class="trec">disputa 8º seed</div></div>
-            <div class="pdot"></div>
-          </div>
+      </div>
+      <div class="mc west">
+        <div class="mh"><span>JOGO DECISIVO — 8º SEED OESTE</span><span class="pb">2 PTS</span></div>
+        <div class="tr" data-pi="w3" data-idx="0" data-conf="west" onclick="piPick(this)">
+          <span class="ts">?</span><div class="tl">❓</div>
+          <div class="ti"><div class="tn">Vencedor Jogo 2</div></div><div class="pdot"></div>
+        </div>
+        <div class="tr" data-pi="w3" data-idx="1" data-conf="west" onclick="piPick(this)">
+          <span class="ts">?</span><div class="tl">❓</div>
+          <div class="ti"><div class="tn">Perdedor Jogo 1</div></div><div class="pdot"></div>
         </div>
       </div>
     </div>
-    <div style="text-align:center;">
-      <button class="btn btn-gold" onclick="savePicks('pi')">SALVAR APOSTAS DO PLAY-IN</button>
-    </div>
-  </section>
-
-  <!-- ════════ PRÉ-PLAYOFFS ════════ -->
-  <section id="pre" class="section">
-    <div class="sec-head">
-      <h2>Apostas Pré-Playoffs</h2>
-      <p>FECHAR ANTES DOS PLAYOFFS COMEÇAREM — NÃO PODEM SER ALTERADAS DEPOIS</p>
-    </div>
-    <div class="apos-bar">
-      <label>APOSTADOR</label>
-      <select id="pre-sel" onchange="loadPre()"><option value="">— selecione —</option></select>
-    </div>
-    <div class="rules-box">
-      <div class="rule-item"><span class="rb">+3 PTS</span><span class="rt">ACERTAR CAMPEÃO DA CONFERÊNCIA (OESTE OU LESTE)</span></div>
-      <div class="rule-item"><span class="rb">+3 PTS</span><span class="rt">ACERTAR CAMPEÃO DA NBA</span></div>
-      <div class="rule-item"><span class="rb neg">-3 PTS</span><span class="rt">ERRAR O CAMPEÃO DA NBA</span></div>
-      <div class="rule-item"><span class="rb">+1 PT</span><span class="rt">CADA TIME ACERTADO NAS FINAIS DE CONF</span></div>
-    </div>
-    <div class="pre-grid" id="pre-cards"></div>
-    <div style="text-align:center;margin-top:8px;">
-      <button class="btn btn-gold" onclick="savePicks('pre')">SALVAR APOSTAS PRÉ-PLAYOFFS</button>
-    </div>
-  </section>
-
-  <!-- ════════ PLAYOFFS ════════ -->
-  <section id="playoffs" class="section">
-    <div class="sec-head">
-      <h2>Bracket dos Playoffs</h2>
-      <p>CLIQUE NO TIME → ESCOLHA O PLACAR DA SÉRIE</p>
-    </div>
-    <div class="apos-bar">
-      <label>APOSTADOR</label>
-      <select id="po-sel" onchange="loadPlayoffs()"><option value="">— selecione —</option></select>
-    </div>
-    <div class="rules-box">
-      <div class="rule-item"><span class="rb">2 PTS</span><span class="rt">VENCEDOR + PLACAR EXATO</span></div>
-      <div class="rule-item"><span class="rb">1 PT</span><span class="rt">SÓ O VENCEDOR</span></div>
-      <div class="rule-item"><span class="rb">0 PTS</span><span class="rt">ERROU O VENCEDOR</span></div>
-    </div>
-    <div class="bracket-scroll">
-      <div class="bracket-outer" id="bracket-outer"></div>
-    </div>
-    <div style="text-align:center;margin-top:26px;">
-      <button class="btn btn-gold" onclick="savePicks('po')">SALVAR APOSTAS DOS PLAYOFFS</button>
-    </div>
-  </section>
-
-  <!-- ════════ RESULTADOS ════════ -->
-  <section id="resultados" class="section">
-    <div class="sec-head">
-      <h2>Resultados Reais</h2>
-      <p>LANÇAR OS RESULTADOS PARA CALCULAR A PONTUAÇÃO</p>
-    </div>
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:12px;color:var(--muted2);">PRÉ-PLAYOFFS</h3>
-    <div class="res-grid" id="res-pre-grid"></div>
-    <hr class="div">
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:12px;color:var(--muted2);">PLAY-IN</h3>
-    <div class="res-grid" id="res-pi-grid"></div>
-    <hr class="div">
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:12px;color:var(--muted2);">PLAYOFFS</h3>
-    <div class="res-grid" id="res-po-grid"></div>
-    <div style="text-align:center;margin-top:26px;">
-      <button class="btn btn-red" onclick="saveResults()">SALVAR RESULTADOS</button>
-    </div>
-  </section>
-
-  <!-- ════════ RANKING ════════ -->
-  <section id="ranking" class="section">
-    <div class="sec-head">
-      <h2>Placar Geral</h2>
-      <p>DESEMPATE: MAIOR Nº DE PLACARES EXATOS ACERTADOS</p>
-    </div>
-    <div id="rank-list" class="rank-grid"></div>
-    <div style="text-align:center;margin-top:22px;">
-      <button class="btn btn-outline" onclick="calcAndRender()">RECALCULAR</button>
-    </div>
-  </section>
-
-  <!-- ════════ CONFIG ════════ -->
-  <section id="config" class="section">
-    <div class="sec-head"><h2>Configurações</h2><p>APOSTADORES E TIMES DO BRACKET</p></div>
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:14px;color:var(--muted2);">APOSTADORES</h3>
-    <div class="add-form">
-      <div class="fg">
-        <label>NOME</label>
-        <input type="text" id="new-name" placeholder="Ex: João Silva" onkeydown="if(event.key==='Enter')addPlayer()">
+    <div class="conf-block">
+      <div class="conf-label east">CONFERÊNCIA LESTE</div>
+      <div class="mc east">
+        <div class="mh"><span>JOGO 1 — 7º vs 8º SEED</span><span class="pb">1 PT</span></div>
+        <div class="tr" data-pi="e78" data-idx="0" data-conf="east" onclick="piPick(this)">
+          <span class="ts" id="pi-e7-seed">7</span><div class="tl" id="pi-e7-logo">🏁</div>
+          <div class="ti"><div class="tn" id="pi-e7-name">Indiana Pacers</div></div><div class="pdot"></div>
+        </div>
+        <div class="tr" data-pi="e78" data-idx="1" data-conf="east" onclick="piPick(this)">
+          <span class="ts" id="pi-e8-seed">8</span><div class="tl" id="pi-e8-logo">🌊</div>
+          <div class="ti"><div class="tn" id="pi-e8-name">Miami Heat</div></div><div class="pdot"></div>
+        </div>
       </div>
-      <button class="btn btn-gold" onclick="addPlayer()">+ ADICIONAR</button>
-    </div>
-    <div class="rank-grid" id="cfg-list"></div>
-    <hr class="div">
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:6px;color:var(--muted2);">TIMES DO BRACKET</h3>
-    <p style="font-family:'Barlow Condensed';font-size:12px;letter-spacing:2px;color:var(--muted);margin-bottom:18px;">
-      EDITE OS TIMES ANTES DOS PLAYOFFS COMEÇAREM — PARA EDIÇÃO COMPLETA USE O PAINEL ADMIN
-    </p>
-    <div class="be-grid">
-      <div class="be-conf">
-        <div class="be-conf-head west"><span>CONFERÊNCIA OESTE</span></div>
-        <div id="be-west"></div>
+      <div class="mc east">
+        <div class="mh"><span>JOGO 2 — 9º vs 10º SEED</span><span class="pb">1 PT</span></div>
+        <div class="tr" data-pi="e910" data-idx="0" data-conf="east" onclick="piPick(this)">
+          <span class="ts" id="pi-e9-seed">9</span><div class="tl" id="pi-e9-logo">🏁</div>
+          <div class="ti"><div class="tn" id="pi-e9-name">Chicago Bulls</div></div><div class="pdot"></div>
+        </div>
+        <div class="tr" data-pi="e910" data-idx="1" data-conf="east" onclick="piPick(this)">
+          <span class="ts" id="pi-e10-seed">10</span><div class="tl" id="pi-e10-logo">🦅</div>
+          <div class="ti"><div class="tn" id="pi-e10-name">Atlanta Hawks</div></div><div class="pdot"></div>
+        </div>
       </div>
-      <div class="be-conf">
-        <div class="be-conf-head east"><span>CONFERÊNCIA LESTE</span></div>
-        <div id="be-east"></div>
+      <div class="mc east">
+        <div class="mh"><span>JOGO DECISIVO — 8º SEED LESTE</span><span class="pb">2 PTS</span></div>
+        <div class="tr" data-pi="e3" data-idx="0" data-conf="east" onclick="piPick(this)">
+          <span class="ts">?</span><div class="tl">❓</div>
+          <div class="ti"><div class="tn">Vencedor Jogo 2</div></div><div class="pdot"></div>
+        </div>
+        <div class="tr" data-pi="e3" data-idx="1" data-conf="east" onclick="piPick(this)">
+          <span class="ts">?</span><div class="tl">❓</div>
+          <div class="ti"><div class="tn">Perdedor Jogo 1</div></div><div class="pdot"></div>
+        </div>
       </div>
     </div>
-    <div style="text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn btn-gold" onclick="saveBracketTeams()">💾 SALVAR TIMES DO BRACKET</button>
-      <button class="btn btn-outline" onclick="resetBracketTeams()">↺ RESTAURAR PADRÃO</button>
-    </div>
-    <hr class="div">
-    <div style="text-align:center;color:var(--muted);font-family:'Barlow Condensed';font-size:11px;letter-spacing:2px;line-height:2;">
-      PLAY-IN: JOGOS 1/2 = 1PT • DECISIVO = 2PTS<br>
-      PLAYOFFS: VENCEDOR+PLACAR = 2PTS • SÓ VENCEDOR = 1PT<br>
-      PRÉ-PLAYOFFS: FINALISTAS CONF = +1PT CADA • CAMPEÃO CONF = +3PTS • CAMPEÃO NBA = +3PTS / -3PTS SE ERRAR<br>
-      DESEMPATE: MAIOR Nº DE PLACARES EXATOS
-    </div>
-  </section>
+  </div>
+  <div style="text-align:center;"><button class="btn btn-gold" id="pi-save-btn" onclick="savePicks('pi')">💾 SALVAR APOSTAS DO PLAY-IN</button></div>
+</section>
+
+<!-- PRÉ-PLAYOFFS -->
+<section id="pre" class="section">
+  <div class="sec-head"><h2>Apostas Pré-Playoffs</h2><p>FECHAR ANTES DOS PLAYOFFS COMEÇAREM</p></div>
+  <div class="locked-banner hidden" id="pre-locked-banner">🔒 APOSTAS ENCERRADAS PELO ADMIN — MODO VISUALIZAÇÃO</div>
+  <div class="rules-box">
+    <div class="rule-item"><span class="rb">+3 PTS</span><span class="rt">CAMPEÃO DA CONFERÊNCIA</span></div>
+    <div class="rule-item"><span class="rb">+3 PTS</span><span class="rt">CAMPEÃO DA NBA</span></div>
+    <div class="rule-item"><span class="rb neg">-3 PTS</span><span class="rt">ERRAR O CAMPEÃO NBA</span></div>
+    <div class="rule-item"><span class="rb">+1 PT</span><span class="rt">CADA TIME NA FINAL DE CONF</span></div>
+  </div>
+  <div class="pre-grid" id="pre-cards"></div>
+  <div style="text-align:center;"><button class="btn btn-gold" id="pre-save-btn" onclick="savePicks('pre')">💾 SALVAR APOSTAS PRÉ-PLAYOFFS</button></div>
+</section>
+
+<!-- PLAYOFFS -->
+<section id="playoffs" class="section">
+  <div class="sec-head"><h2>Bracket dos Playoffs</h2><p>CLIQUE NO TIME → ESCOLHA O PLACAR DA SÉRIE</p></div>
+  <div class="locked-banner hidden" id="po-locked-banner">🔒 APOSTAS ENCERRADAS PELO ADMIN — MODO VISUALIZAÇÃO</div>
+  <div class="rules-box">
+    <div class="rule-item"><span class="rb">2 PTS</span><span class="rt">VENCEDOR + PLACAR EXATO</span></div>
+    <div class="rule-item"><span class="rb">1 PT</span><span class="rt">SÓ O VENCEDOR</span></div>
+    <div class="rule-item"><span class="rb">0 PTS</span><span class="rt">ERROU O VENCEDOR</span></div>
+  </div>
+  <div class="bracket-scroll"><div class="bracket-outer" id="bracket-outer"></div></div>
+  <div style="text-align:center;margin-top:26px;"><button class="btn btn-gold" id="po-save-btn" onclick="savePicks('po')">💾 SALVAR APOSTAS DOS PLAYOFFS</button></div>
+</section>
+
+<!-- RANKING -->
+<section id="ranking" class="section">
+  <div class="sec-head"><h2>Placar Geral</h2><p>DESEMPATE: MAIOR Nº DE PLACARES EXATOS</p></div>
+  <div id="rank-list" class="rank-grid"></div>
+  <div style="text-align:center;margin-top:22px;"><button class="btn btn-outline" onclick="calcAndRender()">🔄 ATUALIZAR</button></div>
+</section>
 
 </main>
 <div class="toast" id="toast"></div>

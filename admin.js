@@ -65,8 +65,8 @@ function teamByName(n){ return allTeams().find(t=>t.name===n)||{name:n,seed:'?',
 // ═══════════════════════════════════════
 //  FIREBASE HELPERS
 // ═══════════════════════════════════════
-const MAIN_DOC  = doc(db, 'bolinha', 'state');
-const PICKS_COL = collection(db, 'picks');
+const MAIN_DOC    = doc(db, 'bolinha', 'state');
+const PLAYERS_COL = collection(db, 'players');
 
 async function fbLoad() {
   try {
@@ -78,7 +78,7 @@ async function fbLoad() {
       S.bracketTeams = d.bracketTeams || null;
       S.playinTeams  = d.playinTeams  || null;
     }
-    const picksSnap = await getDocs(PICKS_COL);
+    const picksSnap = await getDocs(PLAYERS_COL);
     picksSnap.forEach(d => {
       const pid = d.id, data = d.data();
       S.playin[pid]   = data.playin   || {};
@@ -467,21 +467,64 @@ window.saveResults = async function() {
 // ═══════════════════════════════════════
 //  SISTEMA
 // ═══════════════════════════════════════
+//  SISTEMA
+// ═══════════════════════════════════════
 function renderSistema() {
   const el = document.getElementById('info-body'); if (!el) return;
+  const lk = S.locked||{};
   el.innerHTML = `
-    Apostadores: <b style="color:var(--text)">${S.players.length}</b><br>
     Resultados Play-In: <b style="color:var(--text)">${Object.keys(S.results.playin||{}).length}/6</b><br>
     Resultados Playoffs: <b style="color:var(--text)">${Object.keys(S.results.playoffs||{}).length}/15</b><br>
     Times do bracket: <b style="color:var(--text)">${S.bracketTeams?'CUSTOMIZADOS':'PADRÃO'}</b><br>
     Times do Play-In: <b style="color:var(--text)">${S.playinTeams?'CUSTOMIZADOS':'PADRÃO'}</b>`;
+
+  // Conta players reais
+  getDocs(collection(db,'players')).then(snap=>{
+    renderPlayersCount(snap.size);
+  }).catch(()=>{});
+
+  // Lock controls
+  const lkEl = document.getElementById('lock-controls');
+  if (!lkEl) return;
+  [{id:'playin',label:'PLAY-IN'},{id:'pre',label:'PRÉ-PLAYOFFS'},{id:'playoffs',label:'PLAYOFFS'}].forEach(s=>{
+    const isLocked = lk[s.id]||false;
+    lkEl.innerHTML += `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;color:var(--white);">${s.label}</div>
+          <div style="font-family:'Barlow Condensed';font-size:11px;letter-spacing:2px;color:${isLocked?'var(--neg)':'var(--green)'};">
+            ${isLocked?'🔒 ENCERRADO':'🟢 ABERTO PARA APOSTAS'}
+          </div>
+        </div>
+        <button class="btn ${isLocked?'btn-outline':'btn-red'} btn-sm" onclick="toggleLock('${s.id}')">
+          ${isLocked?'↺ REABRIR':'🔒 ENCERRAR'}
+        </button>
+      </div>`;
+  });
 }
 
+function renderPlayersCount(n) {
+  const el = document.getElementById('info-body'); if (!el) return;
+  el.innerHTML = `Apostadores cadastrados: <b style="color:var(--text)">${n}</b><br>` + el.innerHTML;
+}
+
+window.toggleLock = async function(section) {
+  if (!S.locked) S.locked = {playin:false,pre:false,playoffs:false};
+  const current = S.locked[section]||false;
+  const action  = current?'reabrir':'encerrar';
+  if (!confirm(`${action.toUpperCase()} apostas de ${section.toUpperCase()}?`)) return;
+  S.locked[section] = !current;
+  await fbSaveState();
+  document.getElementById('lock-controls').innerHTML='';
+  renderSistema();
+  toast(S.locked[section]?'🔒 Apostas encerradas!':'✅ Apostas reabertas!');
+};
+
 window.exportData = async function() {
-  const picksSnap = await getDocs(PICKS_COL);
-  const picks = {};
-  picksSnap.forEach(d => { picks[d.id] = d.data(); });
-  const blob = new Blob([JSON.stringify({state:S,picks},null,2)],{type:'application/json'});
+  const playersSnap = await getDocs(collection(db,'players'));
+  const players = {};
+  playersSnap.forEach(d=>{ players[d.id]=d.data(); });
+  const blob = new Blob([JSON.stringify({state:S,players},null,2)],{type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'bolinha-nba-'+new Date().toISOString().slice(0,10)+'.json';
@@ -496,9 +539,9 @@ window.importData = async function(input) {
       const data = JSON.parse(e.target.result);
       if (!confirm('Importar dados? Substitui tudo no Firebase.')) return;
       if (data.state) { S = data.state; await fbSaveState(); }
-      if (data.picks) {
+      if (data.players) {
         const batch = writeBatch(db);
-        Object.entries(data.picks).forEach(([pid,p]) => batch.set(doc(db,'picks',pid),p));
+        Object.entries(data.players).forEach(([pid,p]) => batch.set(doc(db,'players',pid),p));
         await batch.commit();
       }
       toast('✅ Dados importados!'); renderSistema();
@@ -517,11 +560,11 @@ window.resetResults = async function() {
 window.resetAll = async function() {
   if (!confirm('ATENÇÃO: isso apaga TUDO do Firebase. Tem certeza?')) return;
   if (!confirm('Última chance — confirmar reset total?')) return;
-  S = {players:[],playin:{},pre:{},playoffs:{},results:{pre:{},playin:{},playoffs:{}},bracketTeams:null,playinTeams:null};
+  S = {players:[],results:{pre:{},playin:{},playoffs:{}},bracketTeams:null,playinTeams:null,locked:{playin:false,pre:false,playoffs:false}};
   await fbSaveState();
-  const picksSnap = await getDocs(PICKS_COL);
+  const playersSnap = await getDocs(collection(db,'players'));
   const batch = writeBatch(db);
-  picksSnap.forEach(d => batch.delete(d.ref));
+  playersSnap.forEach(d => batch.delete(d.ref));
   await batch.commit();
-  toast('🔄 Tudo resetado.'); renderPlayers(); renderSistema();
+  toast('🔄 Tudo resetado.'); renderSistema();
 };
