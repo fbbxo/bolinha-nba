@@ -558,6 +558,9 @@ window.calcAndRender = async function() {
       S.bracketTeams = d.bracketTeams || null;
       S.playinTeams  = d.playinTeams  || null;
       S.locked       = d.locked       || {playin:false,pre:false,playoffs:false};
+      console.log('[Bolinha] Resultados carregados:', JSON.stringify(S.results));
+    } else {
+      console.warn('[Bolinha] Documento bolinha/state não existe ainda no Firebase.');
     }
 
     // Busca todos os apostadores e suas picks
