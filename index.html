@@ -9,246 +9,179 @@
 </head>
 <body>
 
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">CONECTANDO AO FIREBASE...</div>
+</div>
+ 
+<!-- Sync progress bar -->
+<div class="sync-bar" id="sync-bar"></div>
+ 
 <header>
   <div class="eyebrow">NBA • 2024-25</div>
   <h1>BOLINHA NBA</h1>
   <p class="subtitle">PLAY-IN • PRÉ-PLAYOFFS • BRACKET • SÉRIES</p>
-  <a href="admin.html" class="admin-link">⚙ PAINEL ADMIN</a>
+  <div class="header-links">
+    <a href="admin.html" class="header-link">⚙ ADMIN</a>
+    <div class="online-dot"><span id="conn-dot"></span><span id="conn-label">CONECTANDO</span></div>
+  </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('playin',this)">PLAY-IN</button>
     <button class="tab" onclick="showTab('pre',this)">PRÉ-PLAYOFFS</button>
     <button class="tab" onclick="showTab('playoffs',this)">PLAYOFFS</button>
-    <button class="tab" onclick="showTab('resultados',this)">RESULTADOS</button>
     <button class="tab" onclick="showTab('ranking',this)">PLACAR</button>
     <button class="tab" onclick="showTab('config',this)">APOSTADORES</button>
   </div>
 </header>
-
+ 
 <main>
-
-  <!-- ════════ PLAY-IN ════════ -->
-  <section id="playin" class="section active">
-    <div class="sec-head">
-      <h2>Play-In Tournament</h2>
-      <p>QUEM AVANÇA PARA O 7º E 8º SEED — SEM PLACAR DE SÉRIE</p>
-    </div>
-    <div class="apos-bar">
-      <label>APOSTADOR</label>
-      <select id="pi-sel" onchange="loadPlayin()"><option value="">— selecione —</option></select>
-    </div>
-    <div class="rules-box">
-      <div class="rule-item"><span class="rb">1 PT</span><span class="rt">ACERTAR VENCEDOR (JOGOS 1 E 2)</span></div>
-      <div class="rule-item"><span class="rb">2 PTS</span><span class="rt">ACERTAR VENCEDOR (JOGO DECISIVO)</span></div>
-    </div>
-    <div class="pi-grid">
-      <!-- OESTE -->
-      <div class="conf-block">
-        <div class="conf-label west">CONFERÊNCIA OESTE</div>
-        <div class="mc west">
-          <div class="mh"><span>JOGO 1 — 7º vs 8º SEED</span><span class="pb">1 PT</span></div>
-          <div class="tr" data-pi="w78" data-idx="0" data-conf="west" onclick="piPick(this)">
-            <span class="ts">7</span><div class="tl">⚡</div>
-            <div class="ti"><div class="tn">Oklahoma City Thunder</div><div class="trec">68-14</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="w78" data-idx="1" data-conf="west" onclick="piPick(this)">
-            <span class="ts">8</span><div class="tl">🌉</div>
-            <div class="ti"><div class="tn">Golden State Warriors</div><div class="trec">48-34</div></div>
-            <div class="pdot"></div>
-          </div>
+ 
+<!-- PLAY-IN -->
+<section id="playin" class="section active">
+  <div class="sec-head"><h2>Play-In Tournament</h2><p>QUEM AVANÇA PARA O 7º E 8º SEED</p></div>
+  <div class="apos-bar">
+    <label>APOSTADOR</label>
+    <select id="pi-sel" onchange="loadPlayin()"><option value="">— selecione —</option></select>
+  </div>
+  <div class="rules-box">
+    <div class="rule-item"><span class="rb">1 PT</span><span class="rt">ACERTAR VENCEDOR (JOGOS 1 E 2)</span></div>
+    <div class="rule-item"><span class="rb">2 PTS</span><span class="rt">ACERTAR VENCEDOR (JOGO DECISIVO)</span></div>
+  </div>
+  <div class="pi-grid">
+    <div class="conf-block">
+      <div class="conf-label west">CONFERÊNCIA OESTE</div>
+      <div class="mc west">
+        <div class="mh"><span>JOGO 1 — 7º vs 8º SEED</span><span class="pb">1 PT</span></div>
+        <div class="tr" data-pi="w78" data-idx="0" data-conf="west" onclick="piPick(this)">
+          <span class="ts" id="pi-w7-seed">7</span><div class="tl" id="pi-w7-logo">⚡</div>
+          <div class="ti"><div class="tn" id="pi-w7-name">OKC Thunder</div></div><div class="pdot"></div>
         </div>
-        <div class="mc west">
-          <div class="mh"><span>JOGO 2 — 9º vs 10º SEED</span><span class="pb">1 PT</span></div>
-          <div class="tr" data-pi="w910" data-idx="0" data-conf="west" onclick="piPick(this)">
-            <span class="ts">9</span><div class="tl">🐻</div>
-            <div class="ti"><div class="tn">Memphis Grizzlies</div><div class="trec">45-37</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="w910" data-idx="1" data-conf="west" onclick="piPick(this)">
-            <span class="ts">10</span><div class="tl">🌵</div>
-            <div class="ti"><div class="tn">Phoenix Suns</div><div class="trec">42-40</div></div>
-            <div class="pdot"></div>
-          </div>
-        </div>
-        <div class="mc west">
-          <div class="mh"><span>JOGO DECISIVO — 8º SEED OESTE</span><span class="pb">2 PTS</span></div>
-          <div class="tr" data-pi="w3" data-idx="0" data-conf="west" onclick="piPick(this)">
-            <span class="ts">?</span><div class="tl">❓</div>
-            <div class="ti"><div class="tn">Vencedor Jogo 2</div><div class="trec">disputa 8º seed</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="w3" data-idx="1" data-conf="west" onclick="piPick(this)">
-            <span class="ts">?</span><div class="tl">❓</div>
-            <div class="ti"><div class="tn">Perdedor Jogo 1</div><div class="trec">disputa 8º seed</div></div>
-            <div class="pdot"></div>
-          </div>
+        <div class="tr" data-pi="w78" data-idx="1" data-conf="west" onclick="piPick(this)">
+          <span class="ts" id="pi-w8-seed">8</span><div class="tl" id="pi-w8-logo">🌉</div>
+          <div class="ti"><div class="tn" id="pi-w8-name">Golden State Warriors</div></div><div class="pdot"></div>
         </div>
       </div>
-      <!-- LESTE -->
-      <div class="conf-block">
-        <div class="conf-label east">CONFERÊNCIA LESTE</div>
-        <div class="mc east">
-          <div class="mh"><span>JOGO 1 — 7º vs 8º SEED</span><span class="pb">1 PT</span></div>
-          <div class="tr" data-pi="e78" data-idx="0" data-conf="east" onclick="piPick(this)">
-            <span class="ts">7</span><div class="tl">🏁</div>
-            <div class="ti"><div class="tn">Indiana Pacers</div><div class="trec">50-32</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="e78" data-idx="1" data-conf="east" onclick="piPick(this)">
-            <span class="ts">8</span><div class="tl">🌊</div>
-            <div class="ti"><div class="tn">Miami Heat</div><div class="trec">46-36</div></div>
-            <div class="pdot"></div>
-          </div>
+      <div class="mc west">
+        <div class="mh"><span>JOGO 2 — 9º vs 10º SEED</span><span class="pb">1 PT</span></div>
+        <div class="tr" data-pi="w910" data-idx="0" data-conf="west" onclick="piPick(this)">
+          <span class="ts" id="pi-w9-seed">9</span><div class="tl" id="pi-w9-logo">🐻</div>
+          <div class="ti"><div class="tn" id="pi-w9-name">Memphis Grizzlies</div></div><div class="pdot"></div>
         </div>
-        <div class="mc east">
-          <div class="mh"><span>JOGO 2 — 9º vs 10º SEED</span><span class="pb">1 PT</span></div>
-          <div class="tr" data-pi="e910" data-idx="0" data-conf="east" onclick="piPick(this)">
-            <span class="ts">9</span><div class="tl">🏁</div>
-            <div class="ti"><div class="tn">Chicago Bulls</div><div class="trec">40-42</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="e910" data-idx="1" data-conf="east" onclick="piPick(this)">
-            <span class="ts">10</span><div class="tl">🦅</div>
-            <div class="ti"><div class="tn">Atlanta Hawks</div><div class="trec">38-44</div></div>
-            <div class="pdot"></div>
-          </div>
+        <div class="tr" data-pi="w910" data-idx="1" data-conf="west" onclick="piPick(this)">
+          <span class="ts" id="pi-w10-seed">10</span><div class="tl" id="pi-w10-logo">🌵</div>
+          <div class="ti"><div class="tn" id="pi-w10-name">Phoenix Suns</div></div><div class="pdot"></div>
         </div>
-        <div class="mc east">
-          <div class="mh"><span>JOGO DECISIVO — 8º SEED LESTE</span><span class="pb">2 PTS</span></div>
-          <div class="tr" data-pi="e3" data-idx="0" data-conf="east" onclick="piPick(this)">
-            <span class="ts">?</span><div class="tl">❓</div>
-            <div class="ti"><div class="tn">Vencedor Jogo 2</div><div class="trec">disputa 8º seed</div></div>
-            <div class="pdot"></div>
-          </div>
-          <div class="tr" data-pi="e3" data-idx="1" data-conf="east" onclick="piPick(this)">
-            <span class="ts">?</span><div class="tl">❓</div>
-            <div class="ti"><div class="tn">Perdedor Jogo 1</div><div class="trec">disputa 8º seed</div></div>
-            <div class="pdot"></div>
-          </div>
+      </div>
+      <div class="mc west">
+        <div class="mh"><span>JOGO DECISIVO — 8º SEED OESTE</span><span class="pb">2 PTS</span></div>
+        <div class="tr" data-pi="w3" data-idx="0" data-conf="west" onclick="piPick(this)">
+          <span class="ts">?</span><div class="tl">❓</div>
+          <div class="ti"><div class="tn">Vencedor Jogo 2</div></div><div class="pdot"></div>
+        </div>
+        <div class="tr" data-pi="w3" data-idx="1" data-conf="west" onclick="piPick(this)">
+          <span class="ts">?</span><div class="tl">❓</div>
+          <div class="ti"><div class="tn">Perdedor Jogo 1</div></div><div class="pdot"></div>
         </div>
       </div>
     </div>
-    <div style="text-align:center;">
-      <button class="btn btn-gold" onclick="savePicks('pi')">SALVAR APOSTAS DO PLAY-IN</button>
-    </div>
-  </section>
-
-  <!-- ════════ PRÉ-PLAYOFFS ════════ -->
-  <section id="pre" class="section">
-    <div class="sec-head">
-      <h2>Apostas Pré-Playoffs</h2>
-      <p>FECHAR ANTES DOS PLAYOFFS COMEÇAREM — NÃO PODEM SER ALTERADAS DEPOIS</p>
-    </div>
-    <div class="apos-bar">
-      <label>APOSTADOR</label>
-      <select id="pre-sel" onchange="loadPre()"><option value="">— selecione —</option></select>
-    </div>
-    <div class="rules-box">
-      <div class="rule-item"><span class="rb">+3 PTS</span><span class="rt">ACERTAR CAMPEÃO DA CONFERÊNCIA (OESTE OU LESTE)</span></div>
-      <div class="rule-item"><span class="rb">+3 PTS</span><span class="rt">ACERTAR CAMPEÃO DA NBA</span></div>
-      <div class="rule-item"><span class="rb neg">-3 PTS</span><span class="rt">ERRAR O CAMPEÃO DA NBA</span></div>
-      <div class="rule-item"><span class="rb">+1 PT</span><span class="rt">CADA TIME ACERTADO NAS FINAIS DE CONF</span></div>
-    </div>
-    <div class="pre-grid" id="pre-cards"></div>
-    <div style="text-align:center;margin-top:8px;">
-      <button class="btn btn-gold" onclick="savePicks('pre')">SALVAR APOSTAS PRÉ-PLAYOFFS</button>
-    </div>
-  </section>
-
-  <!-- ════════ PLAYOFFS ════════ -->
-  <section id="playoffs" class="section">
-    <div class="sec-head">
-      <h2>Bracket dos Playoffs</h2>
-      <p>CLIQUE NO TIME → ESCOLHA O PLACAR DA SÉRIE</p>
-    </div>
-    <div class="apos-bar">
-      <label>APOSTADOR</label>
-      <select id="po-sel" onchange="loadPlayoffs()"><option value="">— selecione —</option></select>
-    </div>
-    <div class="rules-box">
-      <div class="rule-item"><span class="rb">2 PTS</span><span class="rt">VENCEDOR + PLACAR EXATO</span></div>
-      <div class="rule-item"><span class="rb">1 PT</span><span class="rt">SÓ O VENCEDOR</span></div>
-      <div class="rule-item"><span class="rb">0 PTS</span><span class="rt">ERROU O VENCEDOR</span></div>
-    </div>
-    <div class="bracket-scroll">
-      <div class="bracket-outer" id="bracket-outer"></div>
-    </div>
-    <div style="text-align:center;margin-top:26px;">
-      <button class="btn btn-gold" onclick="savePicks('po')">SALVAR APOSTAS DOS PLAYOFFS</button>
-    </div>
-  </section>
-
-  <!-- ════════ RESULTADOS ════════ -->
-  <section id="resultados" class="section">
-    <div class="sec-head">
-      <h2>Resultados Reais</h2>
-      <p>LANÇAR OS RESULTADOS PARA CALCULAR A PONTUAÇÃO</p>
-    </div>
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:12px;color:var(--muted2);">PRÉ-PLAYOFFS</h3>
-    <div class="res-grid" id="res-pre-grid"></div>
-    <hr class="div">
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:12px;color:var(--muted2);">PLAY-IN</h3>
-    <div class="res-grid" id="res-pi-grid"></div>
-    <hr class="div">
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:12px;color:var(--muted2);">PLAYOFFS</h3>
-    <div class="res-grid" id="res-po-grid"></div>
-    <div style="text-align:center;margin-top:26px;">
-      <button class="btn btn-red" onclick="saveResults()">SALVAR RESULTADOS</button>
-    </div>
-  </section>
-
-  <!-- ════════ RANKING ════════ -->
-  <section id="ranking" class="section">
-    <div class="sec-head">
-      <h2>Placar Geral</h2>
-      <p>DESEMPATE: MAIOR Nº DE PLACARES EXATOS ACERTADOS</p>
-    </div>
-    <div id="rank-list" class="rank-grid"></div>
-    <div style="text-align:center;margin-top:22px;">
-      <button class="btn btn-outline" onclick="calcAndRender()">RECALCULAR</button>
-    </div>
-  </section>
-
-  <!-- ════════ CONFIG ════════ -->
-  <section id="config" class="section">
-    <div class="sec-head"><h2>Configurações</h2><p>APOSTADORES E TIMES DO BRACKET</p></div>
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:14px;color:var(--muted2);">APOSTADORES</h3>
-    <div class="add-form">
-      <div class="fg">
-        <label>NOME</label>
-        <input type="text" id="new-name" placeholder="Ex: João Silva" onkeydown="if(event.key==='Enter')addPlayer()">
+    <div class="conf-block">
+      <div class="conf-label east">CONFERÊNCIA LESTE</div>
+      <div class="mc east">
+        <div class="mh"><span>JOGO 1 — 7º vs 8º SEED</span><span class="pb">1 PT</span></div>
+        <div class="tr" data-pi="e78" data-idx="0" data-conf="east" onclick="piPick(this)">
+          <span class="ts" id="pi-e7-seed">7</span><div class="tl" id="pi-e7-logo">🏁</div>
+          <div class="ti"><div class="tn" id="pi-e7-name">Indiana Pacers</div></div><div class="pdot"></div>
+        </div>
+        <div class="tr" data-pi="e78" data-idx="1" data-conf="east" onclick="piPick(this)">
+          <span class="ts" id="pi-e8-seed">8</span><div class="tl" id="pi-e8-logo">🌊</div>
+          <div class="ti"><div class="tn" id="pi-e8-name">Miami Heat</div></div><div class="pdot"></div>
+        </div>
       </div>
-      <button class="btn btn-gold" onclick="addPlayer()">+ ADICIONAR</button>
-    </div>
-    <div class="rank-grid" id="cfg-list"></div>
-    <hr class="div">
-    <h3 style="font-family:'Bebas Neue';letter-spacing:3px;font-size:18px;margin-bottom:6px;color:var(--muted2);">TIMES DO BRACKET</h3>
-    <p style="font-family:'Barlow Condensed';font-size:12px;letter-spacing:2px;color:var(--muted);margin-bottom:18px;">
-      EDITE OS TIMES ANTES DOS PLAYOFFS COMEÇAREM — PARA EDIÇÃO COMPLETA USE O PAINEL ADMIN
-    </p>
-    <div class="be-grid">
-      <div class="be-conf">
-        <div class="be-conf-head west"><span>CONFERÊNCIA OESTE</span></div>
-        <div id="be-west"></div>
+      <div class="mc east">
+        <div class="mh"><span>JOGO 2 — 9º vs 10º SEED</span><span class="pb">1 PT</span></div>
+        <div class="tr" data-pi="e910" data-idx="0" data-conf="east" onclick="piPick(this)">
+          <span class="ts" id="pi-e9-seed">9</span><div class="tl" id="pi-e9-logo">🏁</div>
+          <div class="ti"><div class="tn" id="pi-e9-name">Chicago Bulls</div></div><div class="pdot"></div>
+        </div>
+        <div class="tr" data-pi="e910" data-idx="1" data-conf="east" onclick="piPick(this)">
+          <span class="ts" id="pi-e10-seed">10</span><div class="tl" id="pi-e10-logo">🦅</div>
+          <div class="ti"><div class="tn" id="pi-e10-name">Atlanta Hawks</div></div><div class="pdot"></div>
+        </div>
       </div>
-      <div class="be-conf">
-        <div class="be-conf-head east"><span>CONFERÊNCIA LESTE</span></div>
-        <div id="be-east"></div>
+      <div class="mc east">
+        <div class="mh"><span>JOGO DECISIVO — 8º SEED LESTE</span><span class="pb">2 PTS</span></div>
+        <div class="tr" data-pi="e3" data-idx="0" data-conf="east" onclick="piPick(this)">
+          <span class="ts">?</span><div class="tl">❓</div>
+          <div class="ti"><div class="tn">Vencedor Jogo 2</div></div><div class="pdot"></div>
+        </div>
+        <div class="tr" data-pi="e3" data-idx="1" data-conf="east" onclick="piPick(this)">
+          <span class="ts">?</span><div class="tl">❓</div>
+          <div class="ti"><div class="tn">Perdedor Jogo 1</div></div><div class="pdot"></div>
+        </div>
       </div>
     </div>
-    <div style="text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn btn-gold" onclick="saveBracketTeams()">💾 SALVAR TIMES DO BRACKET</button>
-      <button class="btn btn-outline" onclick="resetBracketTeams()">↺ RESTAURAR PADRÃO</button>
-    </div>
-    <hr class="div">
-    <div style="text-align:center;color:var(--muted);font-family:'Barlow Condensed';font-size:11px;letter-spacing:2px;line-height:2;">
-      PLAY-IN: JOGOS 1/2 = 1PT • DECISIVO = 2PTS<br>
-      PLAYOFFS: VENCEDOR+PLACAR = 2PTS • SÓ VENCEDOR = 1PT<br>
-      PRÉ-PLAYOFFS: FINALISTAS CONF = +1PT CADA • CAMPEÃO CONF = +3PTS • CAMPEÃO NBA = +3PTS / -3PTS SE ERRAR<br>
-      DESEMPATE: MAIOR Nº DE PLACARES EXATOS
-    </div>
-  </section>
-
+  </div>
+  <div style="text-align:center;"><button class="btn btn-gold" onclick="savePicks('pi')">💾 SALVAR APOSTAS DO PLAY-IN</button></div>
+</section>
+ 
+<!-- PRÉ-PLAYOFFS -->
+<section id="pre" class="section">
+  <div class="sec-head"><h2>Apostas Pré-Playoffs</h2><p>FECHAR ANTES DOS PLAYOFFS COMEÇAREM</p></div>
+  <div class="apos-bar">
+    <label>APOSTADOR</label>
+    <select id="pre-sel" onchange="loadPre()"><option value="">— selecione —</option></select>
+  </div>
+  <div class="rules-box">
+    <div class="rule-item"><span class="rb">+3 PTS</span><span class="rt">CAMPEÃO DA CONFERÊNCIA</span></div>
+    <div class="rule-item"><span class="rb">+3 PTS</span><span class="rt">CAMPEÃO DA NBA</span></div>
+    <div class="rule-item"><span class="rb neg">-3 PTS</span><span class="rt">ERRAR O CAMPEÃO NBA</span></div>
+    <div class="rule-item"><span class="rb">+1 PT</span><span class="rt">CADA TIME NA FINAL DE CONF</span></div>
+  </div>
+  <div class="pre-grid" id="pre-cards"></div>
+  <div style="text-align:center;"><button class="btn btn-gold" onclick="savePicks('pre')">💾 SALVAR APOSTAS PRÉ-PLAYOFFS</button></div>
+</section>
+ 
+<!-- PLAYOFFS -->
+<section id="playoffs" class="section">
+  <div class="sec-head"><h2>Bracket dos Playoffs</h2><p>CLIQUE NO TIME → ESCOLHA O PLACAR DA SÉRIE</p></div>
+  <div class="apos-bar">
+    <label>APOSTADOR</label>
+    <select id="po-sel" onchange="loadPlayoffs()"><option value="">— selecione —</option></select>
+  </div>
+  <div class="rules-box">
+    <div class="rule-item"><span class="rb">2 PTS</span><span class="rt">VENCEDOR + PLACAR EXATO</span></div>
+    <div class="rule-item"><span class="rb">1 PT</span><span class="rt">SÓ O VENCEDOR</span></div>
+    <div class="rule-item"><span class="rb">0 PTS</span><span class="rt">ERROU O VENCEDOR</span></div>
+  </div>
+  <div class="bracket-scroll"><div class="bracket-outer" id="bracket-outer"></div></div>
+  <div style="text-align:center;margin-top:26px;"><button class="btn btn-gold" onclick="savePicks('po')">💾 SALVAR APOSTAS DOS PLAYOFFS</button></div>
+</section>
+ 
+<!-- RANKING -->
+<section id="ranking" class="section">
+  <div class="sec-head"><h2>Placar Geral</h2><p>DESEMPATE: MAIOR Nº DE PLACARES EXATOS</p></div>
+  <div id="rank-list" class="rank-grid"></div>
+  <div style="text-align:center;margin-top:22px;"><button class="btn btn-outline" onclick="calcAndRender()">🔄 RECALCULAR</button></div>
+</section>
+ 
+<!-- APOSTADORES -->
+<section id="config" class="section">
+  <div class="sec-head"><h2>Apostadores</h2><p>GERENCIE OS PARTICIPANTES</p></div>
+  <div class="add-form">
+    <div class="fg"><label>NOME</label><input type="text" id="new-name" placeholder="Ex: João Silva" onkeydown="if(event.key==='Enter')addPlayer()"></div>
+    <button class="btn btn-gold" onclick="addPlayer()">+ ADICIONAR</button>
+  </div>
+  <div class="rank-grid" id="cfg-list"></div>
+  <hr class="div">
+  <div style="text-align:center;color:var(--muted);font-family:'Barlow Condensed';font-size:11px;letter-spacing:2px;line-height:2;">
+    PLAY-IN: JOGOS 1/2 = 1PT • DECISIVO = 2PTS<br>
+    PLAYOFFS: VENCEDOR+PLACAR = 2PTS • SÓ VENCEDOR = 1PT<br>
+    PRÉ-PLAYOFFS: FINALISTAS CONF = +1PT CADA • CAMPEÃO CONF = +3PTS • CAMPEÃO NBA = +3PTS / -3PTS SE ERRAR<br>
+    DESEMPATE: MAIOR Nº DE PLACARES EXATOS
+  </div>
+</section>
+ 
 </main>
 <div class="toast" id="toast"></div>
 
