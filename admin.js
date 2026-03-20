@@ -181,39 +181,46 @@ window.showPage = function(id, btn) {
 function renderPlayers() {
   const el  = document.getElementById('player-list');
   const cnt = document.getElementById('player-count');
-  if (cnt) cnt.textContent = S.players.length + ' APOSTADORES';
-  if (!S.players.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-family:\'Barlow Condensed\';font-size:14px;letter-spacing:2px;padding:10px;">NENHUM APOSTADOR CADASTRADO</div>';
-    return;
-  }
-  el.innerHTML = S.players.map((p, i) => `
-    <div class="player-row">
-      <div class="player-avatar">${p.name[0].toUpperCase()}</div>
-      <div><div class="player-name-txt">${p.name}</div><div class="player-idx">#${i+1}</div></div>
-      <button class="btn btn-outline btn-sm" style="margin-left:auto;color:var(--neg);border-color:var(--neg);"
-        onclick="removePlayer('${p.id}')">✕ REMOVER</button>
-    </div>`).join('');
+
+  getDocs(PLAYERS_COL).then(snap => {
+    if (cnt) cnt.textContent = snap.size + ' APOSTADORES';
+    if (!snap.size) {
+      el.innerHTML = '<div style="color:var(--muted);font-family:\'Barlow Condensed\';font-size:14px;letter-spacing:2px;padding:10px;">NENHUM APOSTADOR CADASTRADO</div>';
+      return;
+    }
+    const players = [];
+    snap.forEach(d => players.push({id:d.id, ...d.data()}));
+    players.sort((a,b) => a.name.localeCompare(b.name));
+    el.innerHTML = players.map((p, i) => `
+      <div class="player-row">
+        <div class="player-avatar">${p.name[0].toUpperCase()}</div>
+        <div><div class="player-name-txt">${p.name}</div><div class="player-idx">#${i+1}</div></div>
+        <button class="btn btn-outline btn-sm" style="margin-left:auto;color:var(--neg);border-color:var(--neg);"
+          onclick="removePlayer('${p.id}')">✕ REMOVER</button>
+      </div>`).join('');
+  }).catch(e => {
+    console.error(e);
+    el.innerHTML = '<div style="color:var(--neg);padding:10px;font-family:\'Barlow Condensed\';">ERRO AO CARREGAR</div>';
+  });
 }
 
 window.addPlayer = async function() {
   const inp = document.getElementById('new-name');
   const n = inp.value.trim(); if (!n) return;
-  const id = 'p' + Date.now();
-  S.players.push({id, name:n});
-  S.playin[id]={}; S.pre[id]={}; S.playoffs[id]={};
+  const id = 'p_' + n.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now();
   inp.value = '';
-  await fbSaveState();
-  try { await setDoc(doc(db,'picks',id),{playin:{},pre:{},playoffs:{}}); } catch(e){}
-  renderPlayers(); toast('🏀 '+n+' adicionado!');
+  try {
+    await setDoc(doc(db,'players',id), {name:n, pin:'0000', playin:{}, pre:{}, playoffs:{}});
+    renderPlayers(); toast('🏀 '+n+' adicionado! PIN padrão: 0000');
+  } catch(e) { toast('❌ Erro ao adicionar!'); console.error(e); }
 };
 
 window.removePlayer = async function(id) {
   if (!confirm('Remover este apostador? As apostas dele serão perdidas.')) return;
-  S.players = S.players.filter(p => p.id !== id);
-  delete S.playin[id]; delete S.pre[id]; delete S.playoffs[id];
-  await fbSaveState();
-  try { await deleteDoc(doc(db,'picks',id)); } catch(e){}
-  renderPlayers(); toast('🗑 Apostador removido.');
+  try {
+    await deleteDoc(doc(db,'players',id));
+    renderPlayers(); toast('🗑 Apostador removido.');
+  } catch(e) { toast('❌ Erro ao remover!'); console.error(e); }
 };
 
 // ═══════════════════════════════════════
