@@ -540,18 +540,35 @@ window.savePicks = async function(type) {
 };
 
 // ═══════════════════════════════════════
-//  RANKING — lê todos os jogadores
+//  RANKING — lê tudo fresh do Firebase
 // ═══════════════════════════════════════
 window.calcAndRender = async function() {
   const el = document.getElementById('rank-list');
-  el.innerHTML = '<div style="color:var(--muted);text-align:center;grid-column:1/-1;padding:36px;font-family:\'Barlow Condensed\';font-size:14px;letter-spacing:2px;">CARREGANDO...</div>';
+  el.innerHTML = '<div style="color:var(--muted);text-align:center;grid-column:1/-1;padding:36px;font-family:\'Barlow Condensed\';font-size:14px;letter-spacing:2px;">⏳ CARREGANDO PLACAR...</div>';
 
   try {
+    // Busca estado global mais recente (resultados)
+    const stateSnap = await getDoc(MAIN_DOC);
+    if (stateSnap.exists()) {
+      const d = stateSnap.data();
+      S.results      = d.results      || {pre:{},playin:{},playoffs:{}};
+      S.bracketTeams = d.bracketTeams || null;
+      S.playinTeams  = d.playinTeams  || null;
+      S.locked       = d.locked       || {playin:false,pre:false,playoffs:false};
+    }
+
+    // Busca todos os apostadores e suas picks
     const snap = await getDocs(PLAYERS_COL);
     const players = [];
     snap.forEach(d => {
       const data = d.data();
-      players.push({ id:d.id, name:data.name, playin:data.playin||{}, pre:data.pre||{}, playoffs:data.playoffs||{} });
+      players.push({
+        id:       d.id,
+        name:     data.name     || d.id,
+        playin:   data.playin   || {},
+        pre:      data.pre      || {},
+        playoffs: data.playoffs || {},
+      });
     });
 
     if (!players.length) {
@@ -559,39 +576,65 @@ window.calcAndRender = async function() {
       return;
     }
 
-    const scored = players.map(p => ({...p,...calcScore(p)}))
-      .sort((a,b)=>b.total!==a.total?b.total-a.total:b.exact-a.exact);
+    const scored = players
+      .map(p => ({...p, ...calcScore(p)}))
+      .sort((a,b) => b.total !== a.total ? b.total - a.total : b.exact - a.exact);
 
-    const medals=['gold','silver','bronze'];
-    function isTied(i){ return i>0&&scored[i].total===scored[i-1].total&&scored[i].exact===scored[i-1].exact; }
+    const medals = ['gold','silver','bronze'];
+    function isTied(i){ return i>0 && scored[i].total===scored[i-1].total && scored[i].exact===scored[i-1].exact; }
 
-    el.innerHTML = scored.map((p,i)=>{
-      const tie  = isTied(i)?`<span class="tie-badge">EMPATE</span>`:'';
-      const isMe = ME && p.id===ME.id;
-      const meB  = isMe?`<span class="me-badge">VOCÊ</span>`:'';
-      const nbaChampPts = p.d.nba_champ>0
-        ?`<span style="color:var(--gold);">+${p.d.nba_champ} campeão NBA</span>`
-        :p.d.nba_champ_neg<0?`<span class="neg-pts">-3 campeão errado</span>`:'';
+    // Verifica se algum resultado foi lançado
+    const hasAnyResult =
+      Object.keys(S.results.playin||{}).length > 0 ||
+      Object.keys(S.results.playoffs||{}).length > 0 ||
+      Object.keys(S.results.pre||{}).length > 0;
+
+    el.innerHTML = scored.map((p, i) => {
+      const tie  = isTied(i) ? `<span class="tie-badge">EMPATE</span>` : '';
+      const isMe = ME && p.id === ME.id;
+      const meB  = isMe ? `<span class="me-badge">VOCÊ</span>` : '';
+      const nbaChampPts = p.d.nba_champ > 0
+        ? `<span style="color:var(--gold);">+${p.d.nba_champ} campeão NBA</span>`
+        : p.d.nba_champ_neg < 0 ? `<span class="neg-pts">-3 campeão errado</span>` : '';
+
+      // Mostra picks se ainda não há resultados (pontencial máximo)
+      const piCount  = Object.keys(p.playin||{}).length;
+      const preCount = Object.keys(p.pre||{}).length;
+      const poCount  = Object.keys(p.playoffs||{}).length;
+
+      const detailLine = hasAnyResult
+        ? `PI:<span>${p.d.pi}</span> R1:<span>${p.d.r1}</span> Semi:<span>${p.d.semi}</span>
+           CF:<span>${p.d.cf}</span> Finals:<span>${p.d.finals}</span><br>
+           Conf+:<span>${p.d.conf_bonus}</span> Pré-PO:<span>${p.d.pre}</span> ${nbaChampPts}`
+        : `${piCount} pick${piCount!==1?'s':''} play-in &nbsp;•&nbsp;
+           ${preCount} pick${preCount!==1?'s':''} pré-playoffs &nbsp;•&nbsp;
+           ${poCount} pick${poCount!==1?'s':''} playoffs`;
+
       return `<div class="rk-card${isMe?' rk-me':''}">
         <div class="rk-num ${medals[i]||''}">${i+1}</div>
         <div class="rk-avatar">${p.name[0].toUpperCase()}</div>
         <div class="rk-info">
           <div class="rk-name">${p.name}${meB}${tie}</div>
-          <div class="rk-detail">
-            PI:<span>${p.d.pi}</span> R1:<span>${p.d.r1}</span> Semi:<span>${p.d.semi}</span>
-            CF:<span>${p.d.cf}</span> Finals:<span>${p.d.finals}</span><br>
-            Conf+:<span>${p.d.conf_bonus}</span> Pré-PO:<span>${p.d.pre}</span> ${nbaChampPts}
-          </div>
+          <div class="rk-detail">${detailLine}</div>
         </div>
         <div class="rk-right">
-          <div class="rk-score">${p.total}</div>
-          <div class="rk-exact">${p.exact} EXATOS</div>
+          <div class="rk-score">${hasAnyResult ? p.total : '—'}</div>
+          <div class="rk-exact">${hasAnyResult ? p.exact+' EXATOS' : 'SEM RESULTADOS'}</div>
         </div>
       </div>`;
     }).join('');
+
+    // Nota se não há resultados ainda
+    if (!hasAnyResult) {
+      el.innerHTML += `<div style="color:var(--muted);text-align:center;grid-column:1/-1;
+        padding:16px;font-family:'Barlow Condensed';font-size:12px;letter-spacing:2px;">
+        ⏳ PONTUAÇÃO APARECE QUANDO O ADMIN LANÇAR OS RESULTADOS
+      </div>`;
+    }
+
   } catch(e) {
     console.error(e);
-    el.innerHTML = '<div style="color:var(--neg);text-align:center;grid-column:1/-1;padding:36px;font-family:\'Barlow Condensed\';font-size:14px;">ERRO AO CARREGAR PLACAR</div>';
+    el.innerHTML = '<div style="color:var(--neg);text-align:center;grid-column:1/-1;padding:36px;font-family:\'Barlow Condensed\';font-size:14px;">ERRO AO CARREGAR PLACAR — VERIFIQUE SUA CONEXÃO</div>';
   }
 };
 

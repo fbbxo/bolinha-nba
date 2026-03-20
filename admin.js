@@ -95,8 +95,11 @@ async function fbSaveState() {
   syncBar(true);
   try {
     await setDoc(MAIN_DOC, {
-      players:S.players, results:S.results,
-      bracketTeams:S.bracketTeams||null, playinTeams:S.playinTeams||null
+      players:      S.players      || [],
+      results:      S.results      || {pre:{},playin:{},playoffs:{}},
+      bracketTeams: S.bracketTeams || null,
+      playinTeams:  S.playinTeams  || null,
+      locked:       S.locked       || {playin:false,pre:false,playoffs:false},
     });
   } catch(e) { toast('❌ Erro ao salvar!'); console.error(e); }
   syncBar(false);
@@ -461,7 +464,8 @@ window.setResPOs = function(mk, sc) {
   S.results.playoffs[mk].score = sc; renderResPlayoffs();
 };
 window.saveResults = async function() {
-  await fbSaveState(); toast('✅ Resultados salvos! App atualizado em tempo real.');
+  await fbSaveState();
+  toast('✅ Resultados salvos no Firebase! Placar atualizado para todos.');
 };
 
 // ═══════════════════════════════════════
