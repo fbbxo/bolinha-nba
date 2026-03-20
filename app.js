@@ -92,6 +92,15 @@ const PICKS_COL = collection(db,'picks');
 // Carrega o estado completo do Firestore
 async function fbLoad() {
   showLoading(true);
+ 
+  // Timeout de segurança — mostra o app mesmo se Firebase demorar
+  const timeout = setTimeout(() => {
+    console.warn('Firebase timeout — carregando com dados vazios');
+    showLoading(false);
+    setOnline(false);
+    initUI();
+  }, 8000);
+ 
   try {
     // Estado global (times, resultados)
     const snap = await getDoc(MAIN_DOC);
@@ -111,9 +120,17 @@ async function fbLoad() {
       S.pre[pid]      = data.pre      || {};
       S.playoffs[pid] = data.playoffs || {};
     });
-  } catch(e) { console.error('Erro ao carregar:', e); }
-  showLoading(false);
-  initUI();
+    clearTimeout(timeout);
+    showLoading(false);
+    initUI();
+  } catch(e) {
+    clearTimeout(timeout);
+    console.error('Erro ao carregar Firebase:', e);
+    showLoading(false);
+    setOnline(false);
+    initUI();
+    toast('⚠️ Sem conexão com Firebase. Verifique as regras do Firestore.');
+  }
 }
  
 // Salva estado global (sem picks individuais)
