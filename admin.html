@@ -9,39 +9,60 @@
 </head>
 <body>
 
-<div class="sync-bar" id="sync-bar"></div>
- 
+<!-- HEADER -->
 <header>
   <div class="header-inner">
     <span class="admin-badge">ADMIN</span>
     <span class="header-title">🏀 BOLINHA NBA 2025</span>
-    <div class="header-right">
-      <div class="online-dot"><span id="conn-dot"></span><span id="conn-label">CONECTANDO</span></div>
-      <a href="app.html" class="back-link">← VOLTAR AO APP</a>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span id="sync-label">SINCRONIZADO</span>
+      &nbsp;|&nbsp;
+      <a href="nba-apostas.html" style="color:var(--gold);text-decoration:none;font-size:11px;letter-spacing:2px;">← VOLTAR AO APP</a>
     </div>
   </div>
 </header>
- 
+
 <div class="layout">
+
+  <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="nav-section">CONFIGURAÇÃO</div>
-    <button class="nav-btn active" onclick="showPage('apostadores',this)"><span class="nav-icon">👥</span>Apostadores</button>
-    <button class="nav-btn" onclick="showPage('playin-times',this)"><span class="nav-icon">🏟️</span>Times Play-In</button>
-    <button class="nav-btn" onclick="showPage('bracket-times',this)"><span class="nav-icon">🗓️</span>Times Playoffs</button>
+    <button class="nav-btn active" onclick="showPage('apostadores',this)">
+      <span class="nav-icon">👥</span>Apostadores
+    </button>
+    <button class="nav-btn" onclick="showPage('playin-times',this)">
+      <span class="nav-icon">🏟️</span>Times Play-In
+    </button>
+    <button class="nav-btn" onclick="showPage('bracket-times',this)">
+      <span class="nav-icon">🗓️</span>Times Playoffs
+    </button>
+
     <div class="nav-section">RESULTADOS</div>
-    <button class="nav-btn" onclick="showPage('res-playin',this)"><span class="nav-icon">🎯</span>Play-In</button>
-    <button class="nav-btn" onclick="showPage('res-pre',this)"><span class="nav-icon">⭐</span>Pré-Playoffs</button>
-    <button class="nav-btn" onclick="showPage('res-playoffs',this)"><span class="nav-icon">🏆</span>Playoffs / Séries</button>
+    <button class="nav-btn" onclick="showPage('res-playin',this)">
+      <span class="nav-icon">🎯</span>Play-In
+    </button>
+    <button class="nav-btn" onclick="showPage('res-pre',this)">
+      <span class="nav-icon">⭐</span>Pré-Playoffs
+    </button>
+    <button class="nav-btn" onclick="showPage('res-playoffs',this)">
+      <span class="nav-icon">🏆</span>Playoffs / Séries
+    </button>
+
     <div class="nav-section">SISTEMA</div>
-    <button class="nav-btn" onclick="showPage('sistema',this)"><span class="nav-icon">⚙️</span>Dados / Reset</button>
+    <button class="nav-btn" onclick="showPage('sistema',this)">
+      <span class="nav-icon">⚙️</span>Dados / Reset
+    </button>
   </nav>
- 
+
+  <!-- CONTENT -->
   <div class="content">
- 
-    <!-- APOSTADORES -->
+
+    <!-- ══════ APOSTADORES ══════ -->
     <div id="page-apostadores" class="page active">
       <div class="page-title">Apostadores</div>
-      <div class="page-sub">ADICIONE E GERENCIE OS PARTICIPANTES</div>
+      <div class="page-sub">ADICIONE, REMOVA E GERENCIE OS PARTICIPANTES DA BOLINHA</div>
+
       <div class="admin-card">
         <div class="ac-head"><div class="ac-title">ADICIONAR APOSTADOR</div></div>
         <div class="ac-body">
@@ -51,18 +72,22 @@
           </div>
         </div>
       </div>
+
       <div class="admin-card">
         <div class="ac-head"><div class="ac-title">PARTICIPANTES</div><span id="player-count" class="pill pill-gold">0</span></div>
         <div class="ac-body"><div class="player-list" id="player-list"></div></div>
       </div>
     </div>
- 
-    <!-- TIMES PLAY-IN -->
+
+    <!-- ══════ TIMES PLAY-IN ══════ -->
     <div id="page-playin-times" class="page">
       <div class="page-title">Times do Play-In</div>
-      <div class="page-sub">EDITE OS TIMES E SEEDS DO TORNEIO PLAY-IN (7º AO 10º)</div>
+      <div class="page-sub">EDITE OS TIMES E SEEDS DO TORNEIO PLAY-IN (7º AO 10º DE CADA CONF)</div>
+
       <div class="admin-card">
-        <div class="ac-head"><div class="ac-title">EDITAR TIMES</div><div class="ac-sub">SEED • EMOJI • NOME</div></div>
+        <div class="ac-head">
+          <div><div class="ac-title">EDITAR TIMES</div><div class="ac-sub">SEED • EMOJI • NOME DO TIME</div></div>
+        </div>
         <div class="ac-body">
           <div class="pi-editor-grid" id="pi-teams-editor"></div>
           <div class="btn-row">
@@ -72,13 +97,16 @@
         </div>
       </div>
     </div>
- 
-    <!-- TIMES PLAYOFFS -->
+
+    <!-- ══════ TIMES PLAYOFFS ══════ -->
     <div id="page-bracket-times" class="page">
       <div class="page-title">Times dos Playoffs</div>
-      <div class="page-sub">EDITE SEEDS, EMOJIS E NOMES DOS 16 TIMES DO BRACKET</div>
+      <div class="page-sub">EDITE SEEDS, EMOJIS E NOMES DE TODOS OS 16 TIMES DO BRACKET</div>
+
       <div class="admin-card">
-        <div class="ac-head"><div class="ac-title">BRACKET — 16 TIMES</div><div class="ac-sub">SEED LIVRE</div></div>
+        <div class="ac-head">
+          <div><div class="ac-title">BRACKET — 16 TIMES</div><div class="ac-sub">SEED PODE SER QUALQUER NÚMERO</div></div>
+        </div>
         <div class="ac-body">
           <div class="te-grid" id="bracket-editor"></div>
           <div class="btn-row">
@@ -88,84 +116,93 @@
         </div>
       </div>
     </div>
- 
-    <!-- RESULTADOS PLAY-IN -->
+
+    <!-- ══════ RESULTADOS PLAY-IN ══════ -->
     <div id="page-res-playin" class="page">
       <div class="page-title">Resultados — Play-In</div>
-      <div class="page-sub">LANCE OS VENCEDORES DE CADA JOGO</div>
+      <div class="page-sub">LANCE OS VENCEDORES DE CADA JOGO DO PLAY-IN</div>
       <div class="admin-card">
         <div class="ac-head"><div class="ac-title">JOGOS DO PLAY-IN</div></div>
         <div class="ac-body">
           <div class="res-matches-grid" id="res-playin-matches"></div>
-          <div class="btn-row"><button class="btn btn-green" onclick="saveResults()">💾 SALVAR RESULTADOS</button></div>
+          <div class="btn-row"><button class="btn btn-green" onclick="saveAll()">💾 SALVAR RESULTADOS</button></div>
         </div>
       </div>
     </div>
- 
-    <!-- RESULTADOS PRÉ-PLAYOFFS -->
+
+    <!-- ══════ RESULTADOS PRÉ-PLAYOFFS ══════ -->
     <div id="page-res-pre" class="page">
       <div class="page-title">Resultados — Pré-Playoffs</div>
-      <div class="page-sub">LANCE OS RESULTADOS DAS APOSTAS ESPECIAIS</div>
+      <div class="page-sub">LANCE OS RESULTADOS DAS APOSTAS ESPECIAIS FEITAS ANTES DOS PLAYOFFS</div>
       <div class="admin-card">
         <div class="ac-head"><div class="ac-title">APOSTAS PRÉ-PLAYOFFS</div></div>
         <div class="ac-body">
           <div class="pre-res-grid" id="res-pre-matches"></div>
-          <div class="btn-row"><button class="btn btn-green" onclick="saveResults()">💾 SALVAR RESULTADOS</button></div>
+          <div class="btn-row"><button class="btn btn-green" onclick="saveAll()">💾 SALVAR RESULTADOS</button></div>
         </div>
       </div>
     </div>
- 
-    <!-- RESULTADOS PLAYOFFS -->
+
+    <!-- ══════ RESULTADOS PLAYOFFS ══════ -->
     <div id="page-res-playoffs" class="page">
       <div class="page-title">Resultados — Playoffs / Séries</div>
-      <div class="page-sub">LANCE VENCEDOR E PLACAR DE CADA SÉRIE</div>
+      <div class="page-sub">LANCE VENCEDOR E PLACAR DE CADA SÉRIE QUANDO TERMINAR</div>
+
       <div id="res-playoffs-content"></div>
-      <div class="btn-row" style="margin-top:8px;"><button class="btn btn-green" onclick="saveResults()">💾 SALVAR TODOS OS RESULTADOS</button></div>
+      <div class="btn-row" style="margin-top:8px;"><button class="btn btn-green" onclick="saveAll()">💾 SALVAR TODOS OS RESULTADOS</button></div>
     </div>
- 
-    <!-- SISTEMA -->
+
+    <!-- ══════ SISTEMA ══════ -->
     <div id="page-sistema" class="page">
       <div class="page-title">Dados & Sistema</div>
-      <div class="page-sub">EXPORTAR, IMPORTAR E RESETAR</div>
+      <div class="page-sub">EXPORTAR, IMPORTAR E RESETAR OS DADOS DA BOLINHA</div>
+
       <div class="admin-card">
         <div class="ac-head"><div class="ac-title">EXPORTAR DADOS</div></div>
         <div class="ac-body">
-          <p style="font-family:'Barlow Condensed';color:var(--muted2);font-size:13px;margin-bottom:12px;letter-spacing:1px;">Gera um JSON com todos os dados do Firebase para backup local.</p>
+          <p style="font-family:'Barlow Condensed';color:var(--muted2);font-size:13px;margin-bottom:14px;letter-spacing:1px;">
+            Gera um arquivo JSON com todos os dados: apostadores, apostas, times e resultados.
+          </p>
           <button class="btn btn-gold" onclick="exportData()">⬇ EXPORTAR JSON</button>
         </div>
       </div>
+
       <div class="admin-card">
         <div class="ac-head"><div class="ac-title">IMPORTAR DADOS</div></div>
         <div class="ac-body">
-          <p style="font-family:'Barlow Condensed';color:var(--muted2);font-size:13px;margin-bottom:12px;letter-spacing:1px;">Carrega um JSON exportado anteriormente. Substitui tudo no Firebase.</p>
+          <p style="font-family:'Barlow Condensed';color:var(--muted2);font-size:13px;margin-bottom:14px;letter-spacing:1px;">
+            Carrega um arquivo JSON exportado anteriormente. Substitui todos os dados atuais.
+          </p>
           <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
           <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">⬆ IMPORTAR JSON</button>
         </div>
       </div>
+
       <div class="admin-card">
         <div class="ac-head"><div class="ac-title">INFORMAÇÕES</div></div>
         <div class="ac-body" id="info-body" style="font-family:'Barlow Condensed';font-size:13px;color:var(--muted2);letter-spacing:1px;line-height:2;"></div>
       </div>
+
       <div class="admin-card" style="border-color:rgba(239,68,68,.2);">
         <div class="ac-head"><div class="ac-title" style="color:var(--neg);">ZONA DE PERIGO</div></div>
         <div class="ac-body">
-          <div class="danger-zone">
+          <div class="danger-zone" style="margin-bottom:12px;">
             <div class="danger-title">RESETAR RESULTADOS</div>
-            <div class="danger-desc">Apaga todos os resultados. As apostas são mantidas.</div>
+            <div class="danger-desc">Apaga todos os resultados lançados (play-in, pré-playoffs e playoffs). As apostas dos participantes são mantidas.</div>
             <button class="btn btn-red btn-sm" onclick="resetResults()">RESETAR RESULTADOS</button>
           </div>
           <div class="danger-zone">
             <div class="danger-title">RESETAR TUDO</div>
-            <div class="danger-desc">Apaga TODOS os dados do Firebase. Irreversível.</div>
+            <div class="danger-desc">Apaga TODOS os dados: apostadores, apostas, times e resultados. Ação irreversível.</div>
             <button class="btn btn-red btn-sm" onclick="resetAll()">RESETAR TUDO</button>
           </div>
         </div>
       </div>
     </div>
- 
-  </div>
-</div>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
 <div class="toast" id="toast"></div>
-<script src="admin.js"></script>
+<script src="admin.js" type="module"></script>
 </body>
 </html>
