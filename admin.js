@@ -77,6 +77,7 @@ async function fbLoad() {
       S.results      = d.results      || {pre:{},playin:{},playoffs:{}};
       S.bracketTeams = d.bracketTeams || null;
       S.playinTeams  = d.playinTeams  || null;
+      S.locked       = d.locked       || {playin:false,pre:false,playoffs:false};
     }
     const picksSnap = await getDocs(PLAYERS_COL);
     picksSnap.forEach(d => {
@@ -94,13 +95,14 @@ async function fbLoad() {
 async function fbSaveState() {
   syncBar(true);
   try {
+    // merge:true garante que não sobrescreve campos que não estamos enviando
     await setDoc(MAIN_DOC, {
       players:      S.players      || [],
       results:      S.results      || {pre:{},playin:{},playoffs:{}},
       bracketTeams: S.bracketTeams || null,
       playinTeams:  S.playinTeams  || null,
       locked:       S.locked       || {playin:false,pre:false,playoffs:false},
-    });
+    }, { merge: true });
   } catch(e) { toast('❌ Erro ao salvar!'); console.error(e); }
   syncBar(false);
 }
@@ -113,6 +115,10 @@ function fbListen() {
     S.results      = d.results      || {pre:{},playin:{},playoffs:{}};
     S.bracketTeams = d.bracketTeams || null;
     S.playinTeams  = d.playinTeams  || null;
+    S.locked       = d.locked       || {playin:false,pre:false,playoffs:false};
+    // Limpa lock-controls antes de renderizar de novo
+    const lkEl = document.getElementById('lock-controls');
+    if (lkEl) lkEl.innerHTML = '';
     renderSistema();
   });
 }

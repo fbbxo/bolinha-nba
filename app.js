@@ -302,9 +302,12 @@ async function fbSaveMyPicks() {
   syncBar(true);
   try {
     await setDoc(doc(db,'players',ME.id), {
-      name: ME.name, pin: ME.pin,
-      playin: ME.playin, pre: ME.pre, playoffs: ME.playoffs
-    });
+      name:     ME.name,
+      pin:      ME.pin,
+      playin:   ME.playin   || {},
+      pre:      ME.pre      || {},
+      playoffs: ME.playoffs || {},
+    }, { merge: true });
   } catch(e) { toast('❌ Erro ao salvar!'); console.error(e); }
   syncBar(false);
 }
