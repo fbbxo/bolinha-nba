@@ -595,6 +595,12 @@ window.calcAndRender = async function() {
       Object.keys(S.results.playoffs||{}).length > 0 ||
       Object.keys(S.results.pre||{}).length > 0;
 
+    console.log('[Bolinha] hasAnyResult:', hasAnyResult);
+    console.log('[Bolinha] results.playin:', JSON.stringify(S.results.playin));
+    console.log('[Bolinha] results.playoffs:', JSON.stringify(S.results.playoffs));
+    console.log('[Bolinha] players encontrados:', players.length);
+    console.log('[Bolinha] primeiro player picks:', JSON.stringify(players[0]));
+
     el.innerHTML = scored.map((p, i) => {
       const tie  = isTied(i) ? `<span class="tie-badge">EMPATE</span>` : '';
       const isMe = ME && p.id === ME.id;
