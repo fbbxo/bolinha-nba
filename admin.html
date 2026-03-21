@@ -20,7 +20,7 @@
       <div class="status-dot"></div>
       <span id="sync-label">SINCRONIZADO</span>
       &nbsp;|&nbsp;
-      <a href="nba-apostas.html" style="color:var(--gold);text-decoration:none;font-size:11px;letter-spacing:2px;">← VOLTAR AO APP</a>
+      <a href="index.html" style="color:var(--gold);text-decoration:none;font-size:11px;letter-spacing:2px;">← VOLTAR AO APP</a>
     </div>
   </div>
 </header>
@@ -30,29 +30,29 @@
   <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="nav-section">CONFIGURAÇÃO</div>
-    <button class="nav-btn active" onclick="showPage('apostadores',this)">
+    <button class="nav-btn active" data-page="apostadores">
       <span class="nav-icon">👥</span>Apostadores
     </button>
-    <button class="nav-btn" onclick="showPage('playin-times',this)">
+    <button class="nav-btn" data-page="playin-times">
       <span class="nav-icon">🏟️</span>Times Play-In
     </button>
-    <button class="nav-btn" onclick="showPage('bracket-times',this)">
+    <button class="nav-btn" data-page="bracket-times">
       <span class="nav-icon">🗓️</span>Times Playoffs
     </button>
 
     <div class="nav-section">RESULTADOS</div>
-    <button class="nav-btn" onclick="showPage('res-playin',this)">
+    <button class="nav-btn" data-page="res-playin">
       <span class="nav-icon">🎯</span>Play-In
     </button>
-    <button class="nav-btn" onclick="showPage('res-pre',this)">
+    <button class="nav-btn" data-page="res-pre">
       <span class="nav-icon">⭐</span>Pré-Playoffs
     </button>
-    <button class="nav-btn" onclick="showPage('res-playoffs',this)">
+    <button class="nav-btn" data-page="res-playoffs">
       <span class="nav-icon">🏆</span>Playoffs / Séries
     </button>
 
     <div class="nav-section">SISTEMA</div>
-    <button class="nav-btn" onclick="showPage('sistema',this)">
+    <button class="nav-btn" data-page="sistema">
       <span class="nav-icon">⚙️</span>Dados / Reset
     </button>
   </nav>

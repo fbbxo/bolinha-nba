@@ -160,6 +160,18 @@ function toast(msg) {
 
 window.addEventListener('online',  () => setOnline(true));
 window.addEventListener('offline', () => setOnline(false));
+
+// Event delegation para botões do sidebar com data-page
+document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-page]');
+    if (btn) {
+      const id = btn.dataset.page;
+      window.showPage(id, btn);
+    }
+  });
+});
+
 fbLoad();
 
 // ═══════════════════════════════════════
@@ -168,8 +180,9 @@ fbLoad();
 window.showPage = function(id, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('page-'+id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const pageEl = document.getElementById('page-'+id);
+  if (pageEl) pageEl.classList.add('active');
   const renders = {
     'apostadores':renderPlayers,'playin-times':renderPlayinTeamEditor,
     'bracket-times':renderBracketEditor,'res-playin':renderResPlayin,
