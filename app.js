@@ -392,81 +392,90 @@ function renderPlayin() {
       const realResult = rPI[game.mk]; // 0 ou 1 ou undefined
       const hasPick    = picks[game.mk] !== undefined && picks[game.mk] !== null;
       const myPick     = picks[game.mk];
-      const teamsKnown = game.teams !== null && game.teams !== undefined;
-      const isOpen     = !locked && teamsKnown && (realResult === undefined || realResult === null);
+      const teamsKnown = Array.isArray(game.teams) && game.teams.length === 2;
       const isDone     = realResult !== undefined && realResult !== null;
+      const isOpen     = !locked && teamsKnown && !isDone;
       const confBorder = conf.cls==='west' ? 'var(--red)' : 'var(--blue2)';
 
-      // Status do jogo
-      let statusIcon, statusColor, statusText;
-      if (isDone)         { statusIcon='✅'; statusColor='var(--muted)';  statusText='ENCERRADO'; }
-      else if (!teamsKnown){ statusIcon='🔒'; statusColor='var(--muted)';  statusText='AGUARDANDO RESULTADOS ANTERIORES'; }
-      else if (locked)    { statusIcon='🔒'; statusColor='var(--neg)';    statusText='APOSTAS ENCERRADAS'; }
-      else                { statusIcon='🟢'; statusColor='var(--green)';  statusText='ABERTO PARA APOSTAS'; }
+      // Não mostra o Jogo Decisivo se os times ainda não são conhecidos
+      if (!teamsKnown) {
+        html += `<div class="mc ${conf.cls}" style="margin-bottom:12px;opacity:.5;">
+          <div class="mh">
+            <span>${game.label}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="pb">${game.pts} PT${game.pts>1?'S':''}</span>
+              <span style="font-family:'Barlow Condensed';font-size:9px;letter-spacing:2px;color:var(--muted);">🔒 AGUARDANDO</span>
+            </div>
+          </div>
+          <div style="padding:16px 13px;font-family:'Barlow Condensed';font-size:12px;letter-spacing:2px;color:var(--muted);text-align:center;">
+            Apostas abrem após os resultados dos Jogos 1 e 2
+          </div>
+        </div>`;
+        return;
+      }
+
+      // Status
+      let statusColor, statusText;
+      if (isDone)       { statusColor='var(--muted)'; statusText='✅ ENCERRADO'; }
+      else if (locked)  { statusColor='var(--neg)';   statusText='🔒 APOSTAS ENCERRADAS'; }
+      else              { statusColor='var(--green)';  statusText='🟢 APOSTAR'; }
 
       html += `<div class="mc ${conf.cls}" style="margin-bottom:12px;">
         <div class="mh">
           <span>${game.label}</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <span class="pb">${game.pts} PT${game.pts>1?'S':''}</span>
-            <span style="font-family:'Barlow Condensed';font-size:9px;letter-spacing:2px;color:${statusColor};">${statusIcon} ${statusText}</span>
+            <span style="font-family:'Barlow Condensed';font-size:9px;letter-spacing:2px;color:${statusColor};">${statusText}</span>
           </div>
         </div>`;
 
-      if (!teamsKnown) {
-        // Times ainda desconhecidos
-        html += `<div style="padding:20px;text-align:center;font-family:'Barlow Condensed';font-size:12px;letter-spacing:2px;color:var(--muted);">
-          🔒 Times definidos após resultados dos Jogos 1 e 2
+      // Renderiza os dois times
+      game.teams.forEach((team, idx) => {
+        const isPicked  = myPick === idx;
+        const isWinner  = realResult === idx;
+        const isCorrect = isDone && isPicked && isWinner;
+        const isWrong   = isDone && isPicked && !isWinner;
+
+        let bg = 'transparent';
+        if (isCorrect)                              bg = 'rgba(34,197,94,.15)';
+        else if (isWrong)                           bg = 'rgba(239,68,68,.1)';
+        else if (isPicked && conf.cls==='west')     bg = 'rgba(200,16,46,.14)';
+        else if (isPicked && conf.cls==='east')     bg = 'rgba(29,66,138,.18)';
+
+        const cursor   = isOpen ? 'pointer' : 'default';
+        const dataAttr = isOpen ? `data-pi-mk="${game.mk}" data-pi-idx="${idx}" data-pi-conf="${conf.cls}"` : '';
+
+        html += `<div ${dataAttr} style="display:flex;align-items:center;padding:11px 13px;
+          gap:11px;cursor:${cursor};background:${bg};transition:background .15s;
+          border-bottom:1px solid rgba(255,255,255,.04);">
+          <span style="font-family:'Bebas Neue';font-size:20px;color:var(--muted);min-width:24px;text-align:center;">${team.seed}</span>
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${team.logo}</div>
+          <div style="flex:1;font-family:'Barlow Condensed';font-weight:700;font-size:14px;">${team.name}</div>
+          ${isPicked ? `<span style="font-size:14px;">${isDone?(isWinner?'✅':'❌'):'✓'}</span>` : ''}
+          <div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;
+            ${isPicked?`background:var(--${conf.cls==='west'?'red':'blue2'});border-color:var(--${conf.cls==='west'?'red':'blue2'});`:''}"></div>
         </div>`;
-      } else {
-        // Renderiza os dois times
-        game.teams.forEach((team, idx) => {
-          const isPicked  = myPick === idx;
-          const isWinner  = realResult === idx;
-          const isCorrect = isDone && isPicked && isWinner;
-          const isWrong   = isDone && isPicked && !isWinner;
+      });
 
-          let bg = 'transparent';
-          if (isCorrect)                              bg = 'rgba(34,197,94,.15)';
-          else if (isWrong)                           bg = 'rgba(239,68,68,.1)';
-          else if (isPicked && conf.cls==='west')     bg = 'rgba(200,16,46,.14)';
-          else if (isPicked && conf.cls==='east')     bg = 'rgba(29,66,138,.18)';
+      // Resultado + pontuação
+      if (isDone) {
+        const winnerTeam = game.teams[realResult];
+        const correct    = myPick === realResult;
+        html += `<div style="padding:8px 13px;font-family:'Barlow Condensed';font-size:11px;letter-spacing:1px;
+          color:${correct?'var(--green)':'var(--neg)'};border-top:1px solid var(--border);">
+          ${!hasPick
+            ? `<span style="color:var(--muted);">Sem aposta — Venceu: ${winnerTeam.logo} ${winnerTeam.name}</span>`
+            : correct
+              ? `🎯 +${game.pts} PT${game.pts>1?'S':''} — Acertou!`
+              : `✗ 0 PTS — Venceu: ${winnerTeam.logo} ${winnerTeam.name}`}
+        </div>`;
+      }
 
-          const cursor   = isOpen ? 'pointer' : 'default';
-          const dataAttr = isOpen ? `data-pi-mk="${game.mk}" data-pi-idx="${idx}" data-pi-conf="${conf.cls}"` : '';
-
-          html += `<div ${dataAttr} style="display:flex;align-items:center;padding:11px 13px;
-            gap:11px;cursor:${cursor};background:${bg};transition:background .15s;
-            border-bottom:1px solid rgba(255,255,255,.04);">
-            <span style="font-family:'Bebas Neue';font-size:20px;color:var(--muted);min-width:24px;text-align:center;">${team.seed}</span>
-            <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${team.logo}</div>
-            <div style="flex:1;font-family:'Barlow Condensed';font-weight:700;font-size:14px;">${team.name}</div>
-            ${isPicked ? `<span style="font-size:14px;">${isDone?(isWinner?'✅':'❌'):'✓'}</span>` : ''}
-            <div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;
-              ${isPicked?`background:var(--${conf.cls==='west'?'red':'blue2'});border-color:var(--${conf.cls==='west'?'red':'blue2'});`:''}"></div>
-          </div>`;
-        });
-
-        // Resultado + pontuação
-        if (isDone) {
-          const winnerTeam = game.teams[realResult];
-          const correct    = myPick === realResult;
-          html += `<div style="padding:8px 13px;font-family:'Barlow Condensed';font-size:11px;letter-spacing:1px;
-            color:${correct?'var(--green)':'var(--neg)'};border-top:1px solid var(--border);">
-            ${!hasPick
-              ? `<span style="color:var(--muted);">Sem aposta — Venceu: ${winnerTeam.logo} ${winnerTeam.name}</span>`
-              : correct
-                ? `🎯 +${game.pts} PT${game.pts>1?'S':''} — Acertou!`
-                : `✗ 0 PTS — Venceu: ${winnerTeam.logo} ${winnerTeam.name}`}
-          </div>`;
-        }
-
-        // Botão salvar — só aparece se jogo aberto e pick feito
-        if (isOpen && hasPick) {
-          html += `<div style="padding:8px 13px;border-top:1px solid var(--border);text-align:right;">
-            <button data-save-pi="true" class="btn btn-gold" style="font-size:11px;padding:5px 14px;">💾 SALVAR</button>
-          </div>`;
-        }
+      // Botão salvar — só aparece se jogo aberto e pick feito
+      if (isOpen && hasPick) {
+        html += `<div style="padding:8px 13px;border-top:1px solid var(--border);text-align:right;">
+          <button data-save-pi="true" class="btn btn-gold" style="font-size:11px;padding:5px 14px;">💾 SALVAR</button>
+        </div>`;
       }
 
       html += `</div>`; // .mc
@@ -476,6 +485,21 @@ function renderPlayin() {
   });
 
   html += '</div>'; // .pi-grid
+
+  // Botão salvar global — aparece se há qualquer pick não salvo em jogo aberto
+  const hasAnyOpenPick = confs.some(c =>
+    c.games.some(g => {
+      const rr = rPI[g.mk];
+      const open = !locked && Array.isArray(g.teams) && (rr===undefined||rr===null);
+      return open && (picks[g.mk]!==undefined && picks[g.mk]!==null);
+    })
+  );
+  if (hasAnyOpenPick) {
+    html += `<div style="text-align:center;margin-top:20px;">
+      <button data-save-pi="true" class="btn btn-gold">💾 SALVAR APOSTAS DO PLAY-IN</button>
+    </div>`;
+  }
+
   el.innerHTML = html;
 
   // Delegação de eventos — picks
