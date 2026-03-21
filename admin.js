@@ -398,7 +398,10 @@ function renderResPlayin() {
     round.matches.forEach(m => {
       const has = r[m.mk]!==undefined && r[m.mk]!==null;
       html += `<div class="match-card" style="${confBorder[m.conf]||''}">
-        <div class="match-head">${m.label}</div>
+        <div class="match-head" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>${m.label}</span>
+          ${has?`<button class="btn btn-outline btn-sm" style="font-size:9px;padding:2px 8px;color:var(--muted);border-color:var(--border2);" data-clear-pi="${m.mk}">✕ LIMPAR</button>`:''}
+        </div>
         <div class="match-body">
           <div class="match-lbl">VENCEDOR</div>
           <div class="match-btns">
@@ -420,6 +423,14 @@ function renderResPlayin() {
       if (!S.results.playin) S.results.playin = {};
       S.results.playin[btn.dataset.piMk] = parseInt(btn.dataset.piIdx);
       renderResPlayin();
+    });
+  });
+  el.querySelectorAll('[data-clear-pi]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm('Remover este resultado do Play-In?')) return;
+      if (S.results.playin) delete S.results.playin[btn.dataset.clearPi];
+      renderResPlayin();
+      toast('🗑 Resultado removido. Clique em SALVAR para confirmar.');
     });
   });
 }
@@ -446,11 +457,16 @@ function renderResPre() {
   ];
   const el=document.getElementById('res-pre-matches'); if(!el) return;
   el.innerHTML=defs.map(d=>{
-    const val=rp[d.field], has=d.multi?(Array.isArray(val)&&val.length===2):(!!val);
-    return `<div class="match-card"><div class="match-head">${d.label}</div><div class="match-body">
-      <div class="match-btns" style="flex-wrap:wrap;">${d.multi?multiBtns(d.field,d.teams):singleBtns(d.field,d.teams)}</div>
-      <div class="match-status">${has?`<span class="status-ok">✓ ${d.multi?(val||[]).join(' e '):val}</span>`:'<span class="status-pend">— AGUARDANDO</span>'}</div>
-    </div></div>`;
+    const val=rp[d.field], has=d.multi?(Array.isArray(val)&&val.length>0):(!!val);
+    return `<div class="match-card">
+      <div class="match-head" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>${d.label}</span>
+        ${has?`<button class="btn btn-outline btn-sm" style="font-size:9px;padding:2px 8px;color:var(--muted);border-color:var(--border2);" data-clear-pre="${d.field}">✕ LIMPAR</button>`:''}
+      </div>
+      <div class="match-body">
+        <div class="match-btns" style="flex-wrap:wrap;">${d.multi?multiBtns(d.field,d.teams):singleBtns(d.field,d.teams)}</div>
+        <div class="match-status">${has?`<span class="status-ok">✓ ${d.multi?(val||[]).join(' e '):val}</span>`:'<span class="status-pend">— AGUARDANDO</span>'}</div>
+      </div></div>`;
   }).join('');
   el.querySelectorAll('[data-pre-field]').forEach(btn=>{
     btn.addEventListener('click',()=>{
@@ -464,6 +480,15 @@ function renderResPre() {
         S.results.pre[field]=arr;
       }
       renderResPre();
+    });
+  });
+  el.querySelectorAll('[data-clear-pre]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const field=btn.dataset.clearPre;
+      if(!confirm(`Remover resultado de "${field}"?`)) return;
+      if(S.results.pre) delete S.results.pre[field];
+      renderResPre();
+      toast('🗑 Resultado removido. Clique em SALVAR para confirmar.');
     });
   });
 }
@@ -507,8 +532,12 @@ function renderResPlayoffs() {
     rd.matches.forEach(mk=>{
       const res=r[mk]||{}, teams=getMatchTeams(mk);
       const isDone=!!res.winner&&!!res.score;
+      const hasAny=!!res.winner||!!res.score;
       html+=`<div class="match-card" style="${border[rd.conf]||''}">
-        <div class="match-head">${teams[0]} vs ${teams[1]}</div>
+        <div class="match-head" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>${teams[0]} vs ${teams[1]}</span>
+          ${hasAny?`<button class="btn btn-outline btn-sm" style="font-size:9px;padding:2px 8px;color:var(--muted);border-color:var(--border2);" data-clear-po="${mk}">✕ LIMPAR</button>`:''}
+        </div>
         <div class="match-body">
           <div class="match-lbl">VENCEDOR</div>
           <div class="match-btns">${teams.map(t=>`<button class="match-tbtn${res.winner===t?' sel-g':''}"
@@ -536,6 +565,14 @@ function renderResPlayoffs() {
       if(!S.results.playoffs) S.results.playoffs={};
       if(!S.results.playoffs[mk]) S.results.playoffs[mk]={};
       S.results.playoffs[mk].score=sc; renderResPlayoffs();
+    });
+  });
+  el.querySelectorAll('[data-clear-po]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(!confirm('Remover vencedor e placar desta série?')) return;
+      if(S.results.playoffs) delete S.results.playoffs[btn.dataset.clearPo];
+      renderResPlayoffs();
+      toast('🗑 Resultado removido. Clique em SALVAR para confirmar.');
     });
   });
 }
