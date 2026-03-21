@@ -162,11 +162,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(7,7,13,.96);backdrop-fi
 
 /* ── BUTTONS ── */
 .btn{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;padding:9px 20px;
-  border-radius:6px;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;
-  position:relative;overflow:hidden;}
-.btn::after{content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,.12));opacity:0;transition:opacity .2s;}
-.btn:hover::after{opacity:1;}
+  border-radius:6px;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;}
 .btn-gold{background:var(--gold);color:#000;}
 .btn-gold:hover{background:var(--gold2);transform:translateY(-2px);box-shadow:0 6px 16px var(--gold-glow);}
 .btn-gold:active{transform:translateY(0);}

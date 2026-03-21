@@ -8,13 +8,13 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-
+ 
 <!-- LOADING -->
 <div class="loading-overlay" id="loading-overlay">
   <div class="loading-spinner"></div>
   <div class="loading-text">CONECTANDO...</div>
 </div>
-
+ 
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
   <div class="login-box">
@@ -35,10 +35,10 @@
     <div class="login-footer">Suas apostas ficam salvas na nuvem 🔒</div>
   </div>
 </div>
-
+ 
 <!-- SYNC BAR -->
 <div class="sync-bar" id="sync-bar"></div>
-
+ 
 <header>
   <div class="eyebrow">NBA • 2024-25</div>
   <h1>BOLINHA NBA</h1>
@@ -58,9 +58,9 @@
     <button class="tab" onclick="showTab('ranking',this)">PLACAR</button>
   </div>
 </header>
-
+ 
 <main>
-
+ 
 <!-- PLAY-IN -->
 <section id="playin" class="section active">
   <div class="sec-head"><h2>Play-In Tournament</h2><p>QUEM AVANÇA PARA O 7º E 8º SEED</p></div>
@@ -75,7 +75,7 @@
   </div>
   <div id="playin-render"></div>
 </section>
-
+ 
 <!-- PRÉ-PLAYOFFS -->
 <section id="pre" class="section">
   <div class="sec-head"><h2>Apostas Pré-Playoffs</h2><p>FECHAR ANTES DOS PLAYOFFS COMEÇAREM</p></div>
@@ -89,7 +89,7 @@
   <div class="pre-grid" id="pre-cards"></div>
   <div style="text-align:center;"><button class="btn btn-gold" id="pre-save-btn" onclick="savePicks('pre')">💾 SALVAR APOSTAS PRÉ-PLAYOFFS</button></div>
 </section>
-
+ 
 <!-- PLAYOFFS -->
 <section id="playoffs" class="section">
   <div class="sec-head"><h2>Bracket dos Playoffs</h2><p>CLIQUE NO TIME → ESCOLHA O PLACAR DA SÉRIE</p></div>
@@ -102,17 +102,17 @@
   <div class="bracket-scroll"><div class="bracket-outer" id="bracket-outer"></div></div>
   <div style="text-align:center;margin-top:26px;"><button class="btn btn-gold" id="po-save-btn" onclick="savePicks('po')">💾 SALVAR APOSTAS DOS PLAYOFFS</button></div>
 </section>
-
+ 
 <!-- RANKING -->
 <section id="ranking" class="section">
   <div class="sec-head"><h2>Placar Geral</h2><p>DESEMPATE: MAIOR Nº DE PLACARES EXATOS</p></div>
   <div id="rank-list" class="rank-grid"></div>
   <div style="text-align:center;margin-top:22px;"><button class="btn btn-outline" onclick="calcAndRender()">🔄 ATUALIZAR</button></div>
 </section>
-
+ 
 </main>
 <div class="toast" id="toast"></div>
-
+ 
 <script src="app.js" type="module"></script>
 </body>
 </html>
