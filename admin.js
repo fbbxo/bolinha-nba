@@ -179,6 +179,9 @@ window.showPage = function(id, btn) {
 // ═══════════════════════════════════════
 //  APOSTADORES
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+//  APOSTADORES
+// ═══════════════════════════════════════
 function renderPlayers() {
   const el  = document.getElementById('player-list');
   const cnt = document.getElementById('player-count');
@@ -192,18 +195,45 @@ function renderPlayers() {
     const players = [];
     snap.forEach(d => players.push({id:d.id, ...d.data()}));
     players.sort((a,b) => a.name.localeCompare(b.name));
-    el.innerHTML = players.map((p, i) => `
+
+    // Guarda IDs para uso seguro nos botões
+    window._adminPlayerIds = {};
+    players.forEach((p,i) => { window._adminPlayerIds['pid_'+i] = p.id; });
+
+    el.innerHTML = players.map((p, i) => {
+      const piCount  = Object.keys(p.playin  ||{}).length;
+      const preCount = Object.keys(p.pre     ||{}).length;
+      const poCount  = Object.keys(p.playoffs||{}).length;
+      return `
       <div class="player-row">
         <div class="player-avatar">${p.name[0].toUpperCase()}</div>
-        <div><div class="player-name-txt">${p.name}</div><div class="player-idx">#${i+1}</div></div>
-        <button class="btn btn-outline btn-sm" style="margin-left:auto;color:var(--neg);border-color:var(--neg);"
-          onclick="removePlayer('${p.id}')">✕ REMOVER</button>
-      </div>`).join('');
+        <div style="flex:1;">
+          <div class="player-name-txt">${p.name}</div>
+          <div class="player-idx">${piCount} play-in · ${preCount} pré-po · ${poCount} playoffs</div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="color:var(--neg);border-color:var(--neg);"
+          onclick="removePlayer('pid_${i}')">✕ REMOVER</button>
+      </div>`;
+    }).join('');
   }).catch(e => {
     console.error(e);
     el.innerHTML = '<div style="color:var(--neg);padding:10px;font-family:\'Barlow Condensed\';">ERRO AO CARREGAR</div>';
   });
 }
+
+window.removePlayer = async function(pidKey) {
+  // Recupera o ID real a partir do índice seguro
+  const id = (window._adminPlayerIds||{})[pidKey] || pidKey;
+  if (!confirm('Remover este apostador e todas as apostas dele?')) return;
+  try {
+    await deleteDoc(doc(db,'players',id));
+    toast('🗑 Apostador removido com sucesso.');
+    renderPlayers();
+  } catch(e) {
+    toast('❌ Erro ao remover!');
+    console.error(e);
+  }
+};
 
 window.addPlayer = async function() {
   const inp = document.getElementById('new-name');
@@ -214,14 +244,6 @@ window.addPlayer = async function() {
     await setDoc(doc(db,'players',id), {name:n, pin:'0000', playin:{}, pre:{}, playoffs:{}});
     renderPlayers(); toast('🏀 '+n+' adicionado! PIN padrão: 0000');
   } catch(e) { toast('❌ Erro ao adicionar!'); console.error(e); }
-};
-
-window.removePlayer = async function(id) {
-  if (!confirm('Remover este apostador? As apostas dele serão perdidas.')) return;
-  try {
-    await deleteDoc(doc(db,'players',id));
-    renderPlayers(); toast('🗑 Apostador removido.');
-  } catch(e) { toast('❌ Erro ao remover!'); console.error(e); }
 };
 
 // ═══════════════════════════════════════
