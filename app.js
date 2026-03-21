@@ -712,14 +712,14 @@ function renderBracket() {
       const confBorder = s.conf==='west'?'var(--red)':s.conf==='east'?'var(--blue2)':'var(--gold)';
       const teamsKnown = teams.every(t => t && t.name !== '?');
 
-      html += `<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${confBorder};border-radius:10px;overflow:hidden;">
+      html += `<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${confBorder};border-radius:10px;overflow:hidden;transition:transform .2s,box-shadow .2s;"
+        ${open?`onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''"`:''}>
         <div style="padding:7px 12px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--border);
           font-family:'Barlow Condensed';font-size:10px;letter-spacing:3px;color:var(--muted);
           display:flex;justify-content:space-between;align-items:center;">
           <span>${s.label}</span>
-          <span>${open?'🟢 APOSTAR':realR.winner?'✅ ENCERRADA':'🔒'}</span>
-        </div>
-        <div style="padding:12px;">`;
+          <span style="color:${open?'var(--green)':realR.winner?'var(--muted)':'var(--muted)'};">${open?'🟢 APOSTAR':realR.winner?'✅ ENCERRADA':'🔒'}</span>
+        </div>`;
 
       if (!teamsKnown) {
         // Times ainda não definidos — mostra quais resultados faltam
@@ -727,37 +727,53 @@ function renderBracket() {
           🔒 Times definidos após resultados anteriores
         </div>`;
       } else {
-        // Times conhecidos — mostra botões de escolha
+        // Times conhecidos — visual igual ao play-in
         teams.forEach(team => {
           const isPicked = pick.winner===team.name;
           const isWinner = realR.winner===team.name;
+          const isCorrect = isPicked && isWinner;
+          const isWrong   = isPicked && realR.winner && !isWinner;
+
           let bg = 'transparent';
-          if (isPicked && isWinner)                       bg = 'rgba(34,197,94,.15)';
-          else if (isPicked && realR.winner && !isWinner) bg = 'rgba(239,68,68,.1)';
-          else if (isPicked && s.conf==='west')           bg = 'rgba(200,16,46,.14)';
-          else if (isPicked && s.conf==='east')           bg = 'rgba(29,66,138,.18)';
-          else if (isPicked)                              bg = 'rgba(253,185,39,.14)';
+          let borderLeft = 'none';
+          if (isCorrect)                               bg = 'rgba(34,197,94,.15)';
+          else if (isWrong)                            bg = 'rgba(239,68,68,.1)';
+          else if (isPicked && s.conf==='west')  { bg = 'rgba(200,16,46,.14)'; borderLeft='3px solid var(--red)'; }
+          else if (isPicked && s.conf==='east')  { bg = 'rgba(29,66,138,.18)'; borderLeft='3px solid var(--blue2)'; }
+          else if (isPicked)                     { bg = 'rgba(253,185,39,.14)'; borderLeft='3px solid var(--gold)'; }
+
+          // Dot colorido igual ao play-in
+          let dotStyle = 'border:2px solid var(--border);background:transparent;';
+          if (isCorrect)                         dotStyle = 'border:2px solid var(--green);background:var(--green);';
+          else if (isWrong)                      dotStyle = 'border:2px solid var(--neg);background:var(--neg);';
+          else if (isPicked && s.conf==='west')  dotStyle = 'border:2px solid var(--red);background:var(--red);';
+          else if (isPicked && s.conf==='east')  dotStyle = 'border:2px solid var(--blue2);background:var(--blue2);';
+          else if (isPicked)                     dotStyle = 'border:2px solid var(--gold);background:var(--gold);';
 
           const cursor  = open ? 'pointer' : 'default';
           const clickFn = open ? `bPick('${s.mk}','${esc(team.name)}','${s.conf}')` : ``;
 
           html += `<div ${clickFn?`onclick="${clickFn}"`:''}
-            style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:6px;
-            margin-bottom:5px;cursor:${cursor};background:${bg};transition:background .15s;">
-            <span style="font-size:16px;">${team.logo}</span>
+            style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+            border-radius:0;margin-bottom:0;cursor:${cursor};background:${bg};
+            border-left:${borderLeft};transition:background .15s;
+            border-bottom:1px solid rgba(255,255,255,.04);">
+            <span style="font-family:'Bebas Neue';font-size:18px;color:var(--muted);min-width:20px;text-align:center;">${team.seed||'?'}</span>
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${team.logo}</div>
             <span style="font-family:'Barlow Condensed';font-weight:700;font-size:13px;flex:1;">${team.name}</span>
-            <span style="font-family:'Bebas Neue';font-size:12px;color:var(--muted);">${team.seed||''}</span>
-            ${isPicked ? `<span style="font-size:12px;">${realR.winner?(isWinner?'✅':'❌'):'✓'}</span>` : ''}
+            ${isPicked?`<span style="font-size:12px;margin-right:4px;">${realR.winner?(isWinner?'✅':'❌'):'✓'}</span>`:''}
+            <div style="width:15px;height:15px;border-radius:50%;flex-shrink:0;${dotStyle}"></div>
           </div>`;
         });
 
         // Seletor de placar — só aparece se escolheu um time E série ainda aberta
         if (pick.winner && open) {
-          html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          html += `<div style="margin:0;padding:10px 12px;border-top:1px solid var(--border);background:var(--card2);">
             <div style="font-family:'Barlow Condensed';font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:6px;">PLACAR DA SÉRIE</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap;">
               ${SCORES.map(sc => `<button onclick="setPlacar('${s.mk}','${sc}')"
                 style="font-family:'Bebas Neue';font-size:12px;padding:4px 10px;border-radius:4px;cursor:pointer;
+                transition:all .15s;
                 border:1px solid ${pick.score===sc?'var(--gold)':'var(--border2)'};
                 background:${pick.score===sc?'var(--gold)':'transparent'};
                 color:${pick.score===sc?'#000':'var(--muted2)'};">${sc}</button>`).join('')}
@@ -769,8 +785,8 @@ function renderBracket() {
         if (realR.winner) {
           const correct = pick.winner===realR.winner;
           const exactOk = correct && pick.score===realR.score;
-          html += `<div style="font-family:'Barlow Condensed';font-size:11px;margin-top:8px;
-            padding-top:8px;border-top:1px solid var(--border);letter-spacing:1px;
+          html += `<div style="font-family:'Barlow Condensed';font-size:11px;padding:8px 12px;
+            border-top:1px solid var(--border);letter-spacing:1px;
             color:${correct?'var(--green)':'var(--neg)'};">
             ${!pick.winner
               ? `<span style="color:var(--muted);">Sem aposta — ${teamByName(realR.winner).logo} ${realR.winner} ${realR.score||''}</span>`
@@ -779,14 +795,14 @@ function renderBracket() {
                 : `✗ 0 PTS — Venceu: ${teamByName(realR.winner).logo} ${realR.winner} ${realR.score||''}`}
           </div>`;
         } else if (pick.winner && !open) {
-          // Aposta feita, série em andamento
-          html += `<div style="font-family:'Barlow Condensed';font-size:11px;color:var(--muted);margin-top:8px;letter-spacing:1px;">
+          html += `<div style="font-family:'Barlow Condensed';font-size:11px;color:var(--muted);
+            padding:8px 12px;border-top:1px solid var(--border);letter-spacing:1px;">
             Seu palpite: ${teamByName(pick.winner).logo} <b style="color:var(--muted2);">${pick.winner}${pick.score?' '+pick.score:''}</b>
           </div>`;
         }
       }
 
-      html += `</div></div>`;
+      html += `</div>`; // fecha card
     });
 
     html += `</div>`;
