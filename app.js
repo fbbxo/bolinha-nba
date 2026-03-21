@@ -847,5 +847,52 @@ function toast(msg) {
 window.addEventListener('online',  ()=>setOnline(true));
 window.addEventListener('offline', ()=>setOnline(false));
 
+// ─── Funções chamadas por onclick inline gerado no renderBracket ───────────
+
+function bPick(mk, teamName, conf) {
+  if (!ME) return;
+  if (!ME.playoffs) ME.playoffs = {};
+  const cur = ME.playoffs[mk]||{};
+  ME.playoffs[mk] = { winner: teamName, score: cur.winner===teamName ? (cur.score||'') : '' };
+  renderBracket();
+}
+
+function setPlacar(mk, sc) {
+  if (!ME) return;
+  if (!ME.playoffs) ME.playoffs = {};
+  if (!ME.playoffs[mk]) ME.playoffs[mk] = {};
+  ME.playoffs[mk].score = sc;
+  renderBracket();
+  toast('✅ Placar '+sc+' registrado!');
+}
+
+function lockedClick() { toast('🔒 Apostas encerradas!'); }
+
+function loadPlayoffs() { renderBracket(); }
+
+function loadPre() { renderPreCards(); }
+
+function addPlayer() {
+  // Não usado no app (auto-cadastro no login), mantido por compatibilidade
+}
+
+function removePlayer() {}
+
+// Expõe TODAS as funções necessárias para onclick inline (obrigatório com type="module")
+window.toast        = toast;
+window.showTab      = window.showTab;      // já definido como window.showTab = function
+window.piPick       = window.piPick;       // já definido como window.piPick = function
+window.prePick      = window.prePick;      // já definido como window.prePick = function
+window.bPick        = bPick;               // definido localmente acima
+window.setPlacar    = setPlacar;           // definido localmente acima
+window.savePicks    = window.savePicks;    // já definido como window.savePicks = async function
+window.calcAndRender = window.calcAndRender; // já definido
+window.doLogin      = window.doLogin;      // já definido
+window.doLogout     = window.doLogout;     // já definido
+window.loadPlayin   = loadPlayin;          // função local
+window.loadPre      = loadPre;             // definido localmente acima
+window.loadPlayoffs = loadPlayoffs;        // definido localmente acima
+window.lockedClick  = lockedClick;         // definido localmente acima
+
 // ── ARRANQUE ──
 init();
