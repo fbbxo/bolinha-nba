@@ -506,14 +506,31 @@ function renderPlayin() {
       // Resultado + pontuação
       if (isDone) {
         const winnerTeam = game.teams[realResult];
+        const myPickTeam = hasPick ? game.teams[myPick] : null;
         const correct    = myPick === realResult;
-        html += `<div style="padding:8px 13px;font-family:'Barlow Condensed';font-size:11px;letter-spacing:1px;
-          color:${correct?'var(--green)':'var(--neg)'};border-top:1px solid var(--border);">
-          ${!hasPick
-            ? `<span style="color:var(--muted);">Sem aposta — Venceu: ${winnerTeam.logo} ${winnerTeam.name}</span>`
-            : correct
-              ? `🎯 +${game.pts} PT${game.pts>1?'S':''} — Acertou!`
-              : `✗ 0 PTS — Venceu: ${winnerTeam.logo} ${winnerTeam.name}`}
+
+        let ptColor, ptLabel;
+        if (!hasPick)  { ptColor='var(--muted)';  ptLabel='SEM APOSTA'; }
+        else if (correct) { ptColor='var(--green)'; ptLabel=`🎯 +${game.pts} PT${game.pts>1?'S':''} — ACERTOU!`; }
+        else           { ptColor='var(--neg)';    ptLabel='✗ 0 PTS — ERROU'; }
+
+        html += `<div style="border-top:1px solid var(--border);background:rgba(0,0,0,.2);">
+          <div style="padding:5px 13px 3px;font-family:'Barlow Condensed';font-size:9px;
+            letter-spacing:2px;color:${ptColor};">${ptLabel}</div>
+          <div style="display:flex;gap:12px;padding:3px 13px 8px;flex-wrap:wrap;">
+            ${myPickTeam ? `<div style="font-family:'Barlow Condensed';font-size:11px;
+              display:flex;align-items:center;gap:4px;color:var(--muted2);">
+              <span style="color:var(--muted);font-size:9px;letter-spacing:2px;">SEU PALPITE:</span>
+              ${teamLogo(myPickTeam.name,13)}
+              <span style="color:${correct?'var(--green)':'var(--neg)'};">${myPickTeam.name}</span>
+            </div>` : ''}
+            <div style="font-family:'Barlow Condensed';font-size:11px;
+              display:flex;align-items:center;gap:4px;color:var(--muted2);">
+              <span style="color:var(--muted);font-size:9px;letter-spacing:2px;">RESULTADO:</span>
+              ${teamLogo(winnerTeam.name,13)}
+              <span style="color:var(--white);">${winnerTeam.name}</span>
+            </div>
+          </div>
         </div>`;
       }
 
@@ -825,18 +842,52 @@ function renderBracket() {
       if (realR.winner) {
         const correct = pick.winner===realR.winner;
         const exactOk = correct && pick.score===realR.score;
-        html += `<div style="padding:7px 12px;font-family:'Barlow Condensed';font-size:11px;
-          border-top:1px solid var(--border);letter-spacing:1px;color:${correct?'var(--green)':'var(--neg)'};">
-          ${!pick.winner
-            ? `<span style="color:var(--muted);">— ${teamLogo(realR.winner,14)} ${realR.winner} ${realR.score||''}</span>`
-            : correct
-              ? (exactOk?'🎯 +2 PTS':'✓ +1 PT')
-              : `✗ 0 — ${teamLogo(realR.winner,14)} ${realR.winner} ${realR.score||''}`}
+        const pts     = !pick.winner ? 0 : correct ? (exactOk ? 2 : 1) : 0;
+
+        // Linha de pontuação
+        let ptColor, ptLabel;
+        if (!pick.winner)      { ptColor='var(--muted)';  ptLabel='SEM APOSTA'; }
+        else if (exactOk)      { ptColor='var(--green)';  ptLabel='🎯 +2 PTS — VENCEDOR + PLACAR EXATO'; }
+        else if (correct)      { ptColor='var(--gold)';   ptLabel='✓ +1 PT — SÓ O VENCEDOR'; }
+        else                   { ptColor='var(--neg)';    ptLabel='✗ 0 PTS — ERROU O VENCEDOR'; }
+
+        html += `<div style="border-top:1px solid var(--border);background:var(--card2);">
+          <div style="padding:6px 12px 4px;font-family:'Barlow Condensed';font-size:9px;
+            letter-spacing:2px;color:${ptColor};">${ptLabel}</div>
+          <div style="display:flex;gap:8px;padding:4px 12px 8px;flex-wrap:wrap;">`;
+
+        // Palpite do apostador
+        if (pick.winner) {
+          const pickCorrect = pick.winner===realR.winner;
+          html += `<div style="font-family:'Barlow Condensed';font-size:11px;letter-spacing:1px;
+            color:var(--muted2);display:flex;align-items:center;gap:4px;">
+            <span style="color:var(--muted);font-size:9px;letter-spacing:2px;">SEU PALPITE:</span>
+            ${teamLogo(pick.winner,13)}
+            <span style="color:${pickCorrect?'var(--green)':'var(--neg)'};">${pick.winner}</span>
+            ${pick.score?`<span style="color:${exactOk?'var(--green)':'var(--neg)'};font-weight:700;">${pick.score}</span>`:'<span style="color:var(--muted);font-size:9px;">SEM PLACAR</span>'}
+          </div>`;
+        }
+
+        // Resultado real
+        html += `<div style="font-family:'Barlow Condensed';font-size:11px;letter-spacing:1px;
+          color:var(--muted2);display:flex;align-items:center;gap:4px;">
+          <span style="color:var(--muted);font-size:9px;letter-spacing:2px;">RESULTADO:</span>
+          ${teamLogo(realR.winner,13)}
+          <span style="color:var(--white);">${realR.winner}</span>
+          ${realR.score?`<span style="color:var(--muted2);font-weight:700;">${realR.score}</span>`:''}
         </div>`;
+
+        html += `</div></div>`;
+
       } else if (pick.winner && !open) {
-        html += `<div style="padding:7px 12px;font-family:'Barlow Condensed';font-size:11px;
-          color:var(--muted);border-top:1px solid var(--border);">
-          ${teamLogo(pick.winner,14)} ${pick.winner}${pick.score?' '+pick.score:''}
+        // Série ainda em andamento — mostra só o palpite
+        html += `<div style="padding:7px 12px;border-top:1px solid var(--border);
+          font-family:'Barlow Condensed';font-size:11px;color:var(--muted);
+          display:flex;align-items:center;gap:5px;">
+          <span style="font-size:9px;letter-spacing:2px;">SEU PALPITE:</span>
+          ${teamLogo(pick.winner,13)}
+          <span>${pick.winner}</span>
+          ${pick.score?`<span style="color:var(--muted2);font-weight:700;">${pick.score}</span>`:''}
         </div>`;
       }
     }
