@@ -78,7 +78,7 @@ const TEAM_LOGOS = {
   'New York Knicks':'logos/knicks.png','Milwaukee Bucks':'logos/bucks.png',
   'Detroit Pistons':'logos/pistons.png','Indiana Pacers':'logos/pacers.png',
   'Atlanta Hawks':'logos/hawks.png','Orlando Magic':'logos/magic.png',
-  'Miami Heat':'logos/heat.gif','Phoenix Suns':'logos/suns.png',
+  'Miami Heat':'logos/heat.png','Phoenix Suns':'logos/suns.png',
   'Chicago Bulls':'logos/bulls.png','Los Angeles Lakers':'logos/lakers.png',
   'Sacramento Kings':'logos/kings.png','San Antonio Spurs':'logos/spurs.png',
   'Utah Jazz':'logos/jazz.png','Washington Wizards':'logos/wizards.png',

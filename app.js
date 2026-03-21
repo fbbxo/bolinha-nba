@@ -44,7 +44,7 @@ const TEAM_LOGOS = {
   'Indiana Pacers':       'logos/pacers.png',
   'Atlanta Hawks':        'logos/hawks.png',
   'Orlando Magic':        'logos/magic.png',
-  'Miami Heat':           'logos/heat.gif',
+  'Miami Heat':           'logos/heat.png',
   'Phoenix Suns':         'logos/suns.png',
   'Chicago Bulls':        'logos/bulls.png',
   'Los Angeles Lakers':   'logos/lakers.png',
