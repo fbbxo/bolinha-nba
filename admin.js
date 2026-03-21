@@ -347,14 +347,26 @@ async function resetBracketTeams() {
 //  RESULTADOS PLAY-IN
 // ═══════════════════════════════════════
 function renderResPlayin() {
-  const pi=getPI(), r=S.results.playin||{};
-  const defs=[
+  const pi = getPI(), r = S.results.playin||{};
+
+  // Calcula times do jogo decisivo com base nos resultados dos jogos 1 e 2
+  function decisiveTeams(conf) {
+    const j1k = conf==='west'?'w78':'e78', j2k = conf==='west'?'w910':'e910';
+    const j1t  = conf==='west'?[pi.w7,pi.w8]:[pi.e7,pi.e8];
+    const j2t  = conf==='west'?[pi.w9,pi.w10]:[pi.e9,pi.e10];
+    const r1 = r[j1k], r2 = r[j2k];
+    if (r1===undefined||r1===null||r2===undefined||r2===null)
+      return [{name:`Venc. J2 ${conf==='west'?'Oeste':'Leste'}`,logo:'❓'},{name:`Perd. J1 ${conf==='west'?'Oeste':'Leste'}`,logo:'❓'}];
+    return [j2t[r2], j1t[1-r1]]; // [vencedor J2, perdedor J1]
+  }
+
+  const defs = [
     {mk:'w78', label:'OESTE — Jogo 1 (7º vs 8º)', teams:[pi.w7,pi.w8]},
     {mk:'w910',label:'OESTE — Jogo 2 (9º vs 10º)',teams:[pi.w9,pi.w10]},
-    {mk:'w3',  label:'OESTE — Jogo Decisivo',     teams:[{name:'Venc. J2 Oeste',logo:'❓'},{name:'Perd. J1 Oeste',logo:'❓'}]},
+    {mk:'w3',  label:'OESTE — Jogo Decisivo (8º seed)',teams:decisiveTeams('west')},
     {mk:'e78', label:'LESTE — Jogo 1 (7º vs 8º)', teams:[pi.e7,pi.e8]},
     {mk:'e910',label:'LESTE — Jogo 2 (9º vs 10º)',teams:[pi.e9,pi.e10]},
-    {mk:'e3',  label:'LESTE — Jogo Decisivo',     teams:[{name:'Venc. J2 Leste',logo:'❓'},{name:'Perd. J1 Leste',logo:'❓'}]},
+    {mk:'e3',  label:'LESTE — Jogo Decisivo (8º seed)',teams:decisiveTeams('east')},
   ];
   const el=document.getElementById('res-playin-matches'); if(!el) return;
   el.innerHTML=defs.map(d=>{
@@ -375,7 +387,6 @@ function renderResPlayin() {
     });
   });
 }
-
 // ═══════════════════════════════════════
 //  RESULTADOS PRÉ-PLAYOFFS
 // ═══════════════════════════════════════

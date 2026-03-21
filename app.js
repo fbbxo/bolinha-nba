@@ -215,8 +215,8 @@ function showLogin() {
 function showApp() {
   document.getElementById('login-screen').classList.add('hidden');
   updateHeaderUser();
-  updatePlayinTeamLabels();
-  loadPlayin();
+  
+  renderPlayin();
   renderPreCards();
   renderBracket();
   updateLockState();
@@ -234,28 +234,12 @@ function updateHeaderUser() {
 
 function updateLockState() {
   const lk = S.locked || {};
-  const sections = [{id:'playin',banner:'pi-locked-banner',btn:'pi-save-btn'},
-                    {id:'pre',   banner:'pre-locked-banner',btn:'pre-save-btn'},
-                    {id:'playoffs',banner:'po-locked-banner',btn:'po-save-btn'}];
-  sections.forEach(({id, banner, btn}) => {
-    const locked = lk[id] || false;
-    document.getElementById(banner)?.classList.toggle('hidden', !locked);
-    const b = document.getElementById(btn);
-    if (b) b.disabled = locked;
-    // Desabilita cliques nas linhas da seção
-    document.querySelectorAll(`#${id} .tr`).forEach(r => {
-      r.classList.toggle('locked-row', locked);
-    });
-    document.querySelectorAll(`#${id} .bt`).forEach(b => {
-      b.classList.toggle('locked-bt', locked);
-    });
-    document.querySelectorAll(`#${id} .pre-tbtn`).forEach(b => {
-      b.disabled = locked;
-    });
-    document.querySelectorAll(`#${id} .spb`).forEach(b => {
-      b.disabled = locked;
-    });
-  });
+  // Banner do play-in (estático no HTML)
+  document.getElementById('pi-locked-banner')?.classList.toggle('hidden', !(lk.playin||false));
+  // Os outros banners são gerenciados pela renderização dinâmica de cada seção
+  document.getElementById('pre-locked-banner')?.classList.toggle('hidden', !(lk.pre||false));
+  const preBtn = document.getElementById('pre-save-btn');
+  if (preBtn) preBtn.disabled = lk.pre||false;
 }
 
 // ═══════════════════════════════════════
@@ -272,7 +256,7 @@ function listenGlobal() {
       S.openRounds   = d.openRounds   || {r1:false,semi:false,cf:false,finals:false};
     S.players      = d.players      || [];
     if (ME) {
-      updatePlayinTeamLabels();
+      renderPlayin();
       renderBracket();
       renderPreCards();
       updateLockState();
@@ -290,7 +274,7 @@ function listenMyPicks() {
     ME.playin   = d.playin   || {};
     ME.pre      = d.pre      || {};
     ME.playoffs = d.playoffs || {};
-    loadPlayin();
+    renderPlayin();
     renderPreCards();
     renderBracket();
   });
@@ -337,42 +321,182 @@ window.showTab = function(id, btn) {
 // ═══════════════════════════════════════
 //  PLAY-IN
 // ═══════════════════════════════════════
-function updatePlayinTeamLabels() {
-  const pi = getPI();
-  const map = {
-    'pi-w7':pi.w7,'pi-w8':pi.w8,'pi-w9':pi.w9,'pi-w10':pi.w10,
-    'pi-e7':pi.e7,'pi-e8':pi.e8,'pi-e9':pi.e9,'pi-e10':pi.e10,
-  };
-  Object.entries(map).forEach(([prefix, t]) => {
-    const sd = document.getElementById(prefix+'-seed');
-    const lg = document.getElementById(prefix+'-logo');
-    const nm = document.getElementById(prefix+'-name');
-    if (sd) sd.textContent = t.seed;
-    if (lg) lg.textContent = t.logo;
-    if (nm) nm.textContent = t.name;
+//  PLAY-IN — RENDERIZAÇÃO DINÂMICA
+// ═══════════════════════════════════════
+// Lógica automática igual ao bracket:
+// Jogo Decisivo só aparece quando os times são conhecidos
+// (após o admin lançar resultados dos Jogos 1 e 2)
+
+function getPlayinDecisiveTeams(conf) {
+  // Times do jogo decisivo = Vencedor do J2 vs Perdedor do J1
+  const rPI = S.results.playin || {};
+  const pi  = getPI();
+  const j1Key = conf==='west' ? 'w78'  : 'e78';
+  const j2Key = conf==='west' ? 'w910' : 'e910';
+
+  // Quem são os times do J1 e J2 desta conf
+  const j1teams = conf==='west' ? [pi.w7, pi.w8]   : [pi.e7, pi.e8];
+  const j2teams = conf==='west' ? [pi.w9, pi.w10]  : [pi.e9, pi.e10];
+
+  const j1result = rPI[j1Key]; // 0 ou 1
+  const j2result = rPI[j2Key]; // 0 ou 1
+
+  // Só retorna times reais se ambos os resultados foram lançados
+  if (j1result === undefined || j1result === null) return null;
+  if (j2result === undefined || j2result === null) return null;
+
+  const j1loser  = j1teams[1 - j1result]; // perdedor do J1
+  const j2winner = j2teams[j2result];      // vencedor do J2
+  return [j2winner, j1loser]; // [idx0, idx1] para o jogo decisivo
+}
+
+function renderPlayin() {
+  const el = document.getElementById('playin-render'); if (!el) return;
+  const locked = (S.locked||{}).playin || false;
+  const rPI    = S.results.playin || {};
+  const picks  = ME ? (ME.playin||{}) : {};
+  const pi     = getPI();
+
+  // Estrutura dos jogos
+  const confs = [
+    {
+      id: 'west', label: 'CONFERÊNCIA OESTE', cls: 'west',
+      games: [
+        { mk:'w78',  label:'JOGO 1 — 7º vs 8º SEED',   pts:1, teams:[pi.w7, pi.w8],  known:true },
+        { mk:'w910', label:'JOGO 2 — 9º vs 10º SEED',  pts:1, teams:[pi.w9, pi.w10], known:true },
+        { mk:'w3',   label:'JOGO DECISIVO — 8º SEED',  pts:2, teams:null,             known:false },
+      ]
+    },
+    {
+      id: 'east', label: 'CONFERÊNCIA LESTE', cls: 'east',
+      games: [
+        { mk:'e78',  label:'JOGO 1 — 7º vs 8º SEED',   pts:1, teams:[pi.e7, pi.e8],  known:true },
+        { mk:'e910', label:'JOGO 2 — 9º vs 10º SEED',  pts:1, teams:[pi.e9, pi.e10], known:true },
+        { mk:'e3',   label:'JOGO DECISIVO — 8º SEED',  pts:2, teams:null,             known:false },
+      ]
+    },
+  ];
+
+  // Preenche times do jogo decisivo com base nos resultados
+  confs[0].games[2].teams = getPlayinDecisiveTeams('west');
+  confs[1].games[2].teams = getPlayinDecisiveTeams('east');
+
+  let html = '<div class="pi-grid">';
+
+  confs.forEach(conf => {
+    html += `<div class="conf-block">
+      <div class="conf-label ${conf.cls}">${conf.label}</div>`;
+
+    conf.games.forEach(game => {
+      const realResult = rPI[game.mk]; // 0 ou 1 ou undefined
+      const hasPick    = picks[game.mk] !== undefined && picks[game.mk] !== null;
+      const myPick     = picks[game.mk];
+      const teamsKnown = game.teams !== null && game.teams !== undefined;
+      const isOpen     = !locked && teamsKnown && (realResult === undefined || realResult === null);
+      const isDone     = realResult !== undefined && realResult !== null;
+      const confBorder = conf.cls==='west' ? 'var(--red)' : 'var(--blue2)';
+
+      // Status do jogo
+      let statusIcon, statusColor, statusText;
+      if (isDone)         { statusIcon='✅'; statusColor='var(--muted)';  statusText='ENCERRADO'; }
+      else if (!teamsKnown){ statusIcon='🔒'; statusColor='var(--muted)';  statusText='AGUARDANDO RESULTADOS ANTERIORES'; }
+      else if (locked)    { statusIcon='🔒'; statusColor='var(--neg)';    statusText='APOSTAS ENCERRADAS'; }
+      else                { statusIcon='🟢'; statusColor='var(--green)';  statusText='ABERTO PARA APOSTAS'; }
+
+      html += `<div class="mc ${conf.cls}" style="margin-bottom:12px;">
+        <div class="mh">
+          <span>${game.label}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="pb">${game.pts} PT${game.pts>1?'S':''}</span>
+            <span style="font-family:'Barlow Condensed';font-size:9px;letter-spacing:2px;color:${statusColor};">${statusIcon} ${statusText}</span>
+          </div>
+        </div>`;
+
+      if (!teamsKnown) {
+        // Times ainda desconhecidos
+        html += `<div style="padding:20px;text-align:center;font-family:'Barlow Condensed';font-size:12px;letter-spacing:2px;color:var(--muted);">
+          🔒 Times definidos após resultados dos Jogos 1 e 2
+        </div>`;
+      } else {
+        // Renderiza os dois times
+        game.teams.forEach((team, idx) => {
+          const isPicked  = myPick === idx;
+          const isWinner  = realResult === idx;
+          const isCorrect = isDone && isPicked && isWinner;
+          const isWrong   = isDone && isPicked && !isWinner;
+
+          let bg = 'transparent';
+          if (isCorrect)                              bg = 'rgba(34,197,94,.15)';
+          else if (isWrong)                           bg = 'rgba(239,68,68,.1)';
+          else if (isPicked && conf.cls==='west')     bg = 'rgba(200,16,46,.14)';
+          else if (isPicked && conf.cls==='east')     bg = 'rgba(29,66,138,.18)';
+
+          const cursor   = isOpen ? 'pointer' : 'default';
+          const dataAttr = isOpen ? `data-pi-mk="${game.mk}" data-pi-idx="${idx}" data-pi-conf="${conf.cls}"` : '';
+
+          html += `<div ${dataAttr} style="display:flex;align-items:center;padding:11px 13px;
+            gap:11px;cursor:${cursor};background:${bg};transition:background .15s;
+            border-bottom:1px solid rgba(255,255,255,.04);">
+            <span style="font-family:'Bebas Neue';font-size:20px;color:var(--muted);min-width:24px;text-align:center;">${team.seed}</span>
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${team.logo}</div>
+            <div style="flex:1;font-family:'Barlow Condensed';font-weight:700;font-size:14px;">${team.name}</div>
+            ${isPicked ? `<span style="font-size:14px;">${isDone?(isWinner?'✅':'❌'):'✓'}</span>` : ''}
+            <div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;
+              ${isPicked?`background:var(--${conf.cls==='west'?'red':'blue2'});border-color:var(--${conf.cls==='west'?'red':'blue2'});`:''}"></div>
+          </div>`;
+        });
+
+        // Resultado + pontuação
+        if (isDone) {
+          const winnerTeam = game.teams[realResult];
+          const correct    = myPick === realResult;
+          html += `<div style="padding:8px 13px;font-family:'Barlow Condensed';font-size:11px;letter-spacing:1px;
+            color:${correct?'var(--green)':'var(--neg)'};border-top:1px solid var(--border);">
+            ${!hasPick
+              ? `<span style="color:var(--muted);">Sem aposta — Venceu: ${winnerTeam.logo} ${winnerTeam.name}</span>`
+              : correct
+                ? `🎯 +${game.pts} PT${game.pts>1?'S':''} — Acertou!`
+                : `✗ 0 PTS — Venceu: ${winnerTeam.logo} ${winnerTeam.name}`}
+          </div>`;
+        }
+
+        // Botão salvar — só aparece se jogo aberto e pick feito
+        if (isOpen && hasPick) {
+          html += `<div style="padding:8px 13px;border-top:1px solid var(--border);text-align:right;">
+            <button data-save-pi="true" class="btn btn-gold" style="font-size:11px;padding:5px 14px;">💾 SALVAR</button>
+          </div>`;
+        }
+      }
+
+      html += `</div>`; // .mc
+    });
+
+    html += `</div>`; // .conf-block
+  });
+
+  html += '</div>'; // .pi-grid
+  el.innerHTML = html;
+
+  // Delegação de eventos — picks
+  el.querySelectorAll('[data-pi-mk]').forEach(row => {
+    row.addEventListener('click', () => {
+      if (!ME) return;
+      if ((S.locked||{}).playin) { toast('🔒 Apostas encerradas!'); return; }
+      if (!ME.playin) ME.playin = {};
+      ME.playin[row.dataset.piMk] = parseInt(row.dataset.piIdx);
+      renderPlayin();
+    });
+  });
+
+  // Delegação para salvar
+  el.querySelectorAll('[data-save-pi]').forEach(btn => {
+    btn.addEventListener('click', () => savePicks('pi'));
   });
 }
 
 function loadPlayin() {
-  if (!ME) return;
-  document.querySelectorAll('#playin .tr').forEach(r=>r.classList.remove('sw','se'));
-  const picks = ME.playin || {};
-  Object.keys(picks).forEach(mk => {
-    document.querySelectorAll(`[data-pi="${mk}"]`).forEach((r,i)=>{
-      if (i===picks[mk]) r.classList.add(r.dataset.conf==='west'?'sw':'se');
-    });
-  });
+  renderPlayin();
 }
-
-window.piPick = function(row) {
-  if (!ME) return;
-  if ((S.locked||{}).playin) { toast('🔒 Apostas encerradas!'); return; }
-  const mk = row.dataset.pi, idx = parseInt(row.dataset.idx), conf = row.dataset.conf;
-  document.querySelectorAll(`[data-pi="${mk}"]`).forEach(r=>r.classList.remove('sw','se'));
-  row.classList.add(conf==='west'?'sw':'se');
-  if (!ME.playin) ME.playin = {};
-  ME.playin[mk] = idx;
-};
 
 // ═══════════════════════════════════════
 //  PRÉ-PLAYOFFS
