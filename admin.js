@@ -77,7 +77,8 @@ async function fbLoad() {
       S.results      = d.results      || {pre:{},playin:{},playoffs:{}};
       S.bracketTeams = d.bracketTeams || null;
       S.playinTeams  = d.playinTeams  || null;
-      S.locked       = d.locked       || {playin:false,pre:false,playoffs:false};
+      S.locked       = d.locked       || {playin:false,pre:false};
+      S.openRounds   = d.openRounds   || {r1:false,semi:false,cf:false,finals:false};
     }
     const picksSnap = await getDocs(PLAYERS_COL);
     picksSnap.forEach(d => {
@@ -101,7 +102,8 @@ async function fbSaveState() {
       results:      S.results      || {pre:{},playin:{},playoffs:{}},
       bracketTeams: S.bracketTeams || null,
       playinTeams:  S.playinTeams  || null,
-      locked:       S.locked       || {playin:false,pre:false,playoffs:false},
+      locked:       S.locked       || {playin:false,pre:false},
+      openRounds:   S.openRounds   || {r1:false,semi:false,cf:false,finals:false},
     }, { merge: true });
   } catch(e) { toast('❌ Erro ao salvar!'); console.error(e); }
   syncBar(false);
@@ -543,21 +545,89 @@ function renderSistema() {
   });
 }
 
+// ═══════════════════════════════════════
+//  SISTEMA — LOCKS POR RODADA
+// ═══════════════════════════════════════
+// S.locked estrutura nova:
+// { playin: bool, pre: bool,
+//   rounds: { r1: bool, semi: bool, cf: bool, finals: bool } }
+// S.openRounds: { r1: bool, semi: bool, cf: bool, finals: bool }
+
+const ROUND_DEFS_LOCK = [
+  { id:'r1',     label:'1ª RODADA',              keys:['wR1_0','wR1_1','wR1_2','wR1_3','eR1_0','eR1_1','eR1_2','eR1_3'] },
+  { id:'semi',   label:'SEMIFINAIS',              keys:['wR2_0','wR2_1','eR2_0','eR2_1'] },
+  { id:'cf',     label:'FINAIS DE CONFERÊNCIA',   keys:['wR3_0','eR3_0'] },
+  { id:'finals', label:'NBA FINALS',              keys:['finals'] },
+];
+
+function renderSistema() {
+  const el = document.getElementById('info-body'); if (!el) return;
+  el.innerHTML = `
+    Resultados Play-In: <b style="color:var(--text)">${Object.keys(S.results.playin||{}).length}/6</b><br>
+    Resultados Playoffs: <b style="color:var(--text)">${Object.keys(S.results.playoffs||{}).length}/15</b><br>
+    Times do bracket: <b style="color:var(--text)">${S.bracketTeams?'CUSTOMIZADOS':'PADRÃO'}</b><br>
+    Times do Play-In: <b style="color:var(--text)">${S.playinTeams?'CUSTOMIZADOS':'PADRÃO'}</b>`;
+
+  getDocs(collection(db,'players')).then(snap=>{
+    renderPlayersCount(snap.size);
+  }).catch(()=>{});
+
+  const lkEl = document.getElementById('lock-controls');
+  if (!lkEl) return;
+  lkEl.innerHTML = '';
+
+  const lk = S.locked||{};
+  const or = S.openRounds||{};
+
+  // Play-In e Pré-Playoffs
+  [{id:'playin',label:'PLAY-IN'},{id:'pre',label:'PRÉ-PLAYOFFS'}].forEach(s=>{
+    const isLocked = lk[s.id]||false;
+    lkEl.innerHTML += lockRow(s.label, isLocked, `toggleLock('${s.id}')`);
+  });
+
+  // Divisor
+  lkEl.innerHTML += `<div style="font-family:'Barlow Condensed';font-size:11px;letter-spacing:2px;color:var(--muted);padding:10px 0 4px;">
+    ℹ️ PLAYOFFS: séries abrem automaticamente quando os times são definidos via Resultados → Playoffs/Séries
+  </div>`;
+}
+
+function lockRow(label, isLocked, fn, btnLabel, btnClass) {
+  const locked = isLocked;
+  const bLabel = btnLabel || (locked ? '↺ REABRIR' : '🔒 ENCERRAR');
+  const bClass = btnClass || (locked ? 'btn-outline' : 'btn-red');
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+    <div>
+      <div style="font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;color:var(--white);">${label}</div>
+      <div style="font-family:'Barlow Condensed';font-size:11px;letter-spacing:2px;color:${locked?'var(--neg)':'var(--green)'};">
+        ${locked?'🔒 FECHADO':'🟢 ABERTO'}
+      </div>
+    </div>
+    <button class="btn ${bClass} btn-sm" onclick="${fn}">${bLabel}</button>
+  </div>`;
+}
+
 function renderPlayersCount(n) {
   const el = document.getElementById('info-body'); if (!el) return;
   el.innerHTML = `Apostadores cadastrados: <b style="color:var(--text)">${n}</b><br>` + el.innerHTML;
 }
 
 window.toggleLock = async function(section) {
-  if (!S.locked) S.locked = {playin:false,pre:false,playoffs:false};
-  const current = S.locked[section]||false;
-  const action  = current?'reabrir':'encerrar';
-  if (!confirm(`${action.toUpperCase()} apostas de ${section.toUpperCase()}?`)) return;
-  S.locked[section] = !current;
+  if (!S.locked) S.locked = {};
+  S.locked[section] = !(S.locked[section]||false);
   await fbSaveState();
-  document.getElementById('lock-controls').innerHTML='';
   renderSistema();
   toast(S.locked[section]?'🔒 Apostas encerradas!':'✅ Apostas reabertas!');
+};
+
+window.toggleRound = async function(roundId) {
+  if (!S.openRounds) S.openRounds = {};
+  const wasOpen = S.openRounds[roundId]||false;
+  const action = wasOpen ? 'fechar' : 'abrir';
+  if (!confirm(`${action.toUpperCase()} apostas da rodada "${roundId.toUpperCase()}" para todos?`)) return;
+  S.openRounds[roundId] = !wasOpen;
+  await fbSaveState();
+  renderSistema();
+  toast(S.openRounds[roundId]?`🟢 ${roundId.toUpperCase()} aberta para apostas!`:`🔒 ${roundId.toUpperCase()} fechada.`);
 };
 
 window.exportData = async function() {
