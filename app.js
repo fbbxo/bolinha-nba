@@ -313,6 +313,7 @@ window.showTab = function(id, btn) {
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById(id).classList.add('active');
+  if (id === 'playin')   renderPlayin();
   if (id === 'ranking')  calcAndRender();
   if (id === 'playoffs') renderBracket();
   if (id === 'pre')      renderPreCards();

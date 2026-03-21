@@ -349,40 +349,76 @@ async function resetBracketTeams() {
 function renderResPlayin() {
   const pi = getPI(), r = S.results.playin||{};
 
-  // Calcula times do jogo decisivo com base nos resultados dos jogos 1 e 2
   function decisiveTeams(conf) {
-    const j1k = conf==='west'?'w78':'e78', j2k = conf==='west'?'w910':'e910';
-    const j1t  = conf==='west'?[pi.w7,pi.w8]:[pi.e7,pi.e8];
-    const j2t  = conf==='west'?[pi.w9,pi.w10]:[pi.e9,pi.e10];
-    const r1 = r[j1k], r2 = r[j2k];
+    const j1k=conf==='west'?'w78':'e78', j2k=conf==='west'?'w910':'e910';
+    const j1t=conf==='west'?[pi.w7,pi.w8]:[pi.e7,pi.e8];
+    const j2t=conf==='west'?[pi.w9,pi.w10]:[pi.e9,pi.e10];
+    const r1=r[j1k], r2=r[j2k];
     if (r1===undefined||r1===null||r2===undefined||r2===null)
-      return [{name:`Venc. J2 ${conf==='west'?'Oeste':'Leste'}`,logo:'❓'},{name:`Perd. J1 ${conf==='west'?'Oeste':'Leste'}`,logo:'❓'}];
-    return [j2t[r2], j1t[1-r1]]; // [vencedor J2, perdedor J1]
+      return [{name:'Venc. J2',logo:'❓'},{name:'Perd. J1',logo:'❓'}];
+    return [j2t[r2], j1t[1-r1]];
   }
 
-  const defs = [
-    {mk:'w78', label:'OESTE — Jogo 1 (7º vs 8º)', teams:[pi.w7,pi.w8]},
-    {mk:'w910',label:'OESTE — Jogo 2 (9º vs 10º)',teams:[pi.w9,pi.w10]},
-    {mk:'w3',  label:'OESTE — Jogo Decisivo (8º seed)',teams:decisiveTeams('west')},
-    {mk:'e78', label:'LESTE — Jogo 1 (7º vs 8º)', teams:[pi.e7,pi.e8]},
-    {mk:'e910',label:'LESTE — Jogo 2 (9º vs 10º)',teams:[pi.e9,pi.e10]},
-    {mk:'e3',  label:'LESTE — Jogo Decisivo (8º seed)',teams:decisiveTeams('east')},
+  // Rodadas separadas, igual ao visual dos playoffs
+  const rounds = [
+    {
+      label: 'JOGOS CLASSIFICATÓRIOS',
+      sub:   'JOGO 1 E JOGO 2 — ABERTOS PARA APOSTAS IMEDIATAMENTE',
+      matches: [
+        {mk:'w78',  label:'OESTE — Jogo 1 (7º vs 8º)', conf:'west', teams:[pi.w7,pi.w8]},
+        {mk:'e78',  label:'LESTE — Jogo 1 (7º vs 8º)', conf:'east', teams:[pi.e7,pi.e8]},
+        {mk:'w910', label:'OESTE — Jogo 2 (9º vs 10º)',conf:'west', teams:[pi.w9,pi.w10]},
+        {mk:'e910', label:'LESTE — Jogo 2 (9º vs 10º)',conf:'east', teams:[pi.e9,pi.e10]},
+      ]
+    },
+    {
+      label: 'JOGO DECISIVO',
+      sub:   'APOSTAS LIBERADAS AUTOMATICAMENTE APÓS OS RESULTADOS DOS JOGOS 1 E 2',
+      matches: [
+        {mk:'w3', label:'OESTE — Decisivo (8º seed)', conf:'west', teams:decisiveTeams('west')},
+        {mk:'e3', label:'LESTE — Decisivo (8º seed)', conf:'east', teams:decisiveTeams('east')},
+      ]
+    },
   ];
-  const el=document.getElementById('res-playin-matches'); if(!el) return;
-  el.innerHTML=defs.map(d=>{
-    const has=r[d.mk]!==undefined&&r[d.mk]!==null;
-    return `<div class="match-card"><div class="match-head">${d.label}</div><div class="match-body">
-      <div class="match-lbl">VENCEDOR</div><div class="match-btns">
-        ${d.teams.map((t,i)=>`<button class="match-tbtn${r[d.mk]===i?' sel-g':''}"
-          data-pi-mk="${d.mk}" data-pi-idx="${i}">${t.logo} ${t.name}</button>`).join('')}
-      </div>
-      <div class="match-status">${has?'<span class="status-ok">✓ LANÇADO</span>':'<span class="status-pend">— AGUARDANDO</span>'}</div>
-    </div></div>`;
-  }).join('');
-  el.querySelectorAll('[data-pi-mk]').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      if(!S.results.playin) S.results.playin={};
-      S.results.playin[btn.dataset.piMk]=parseInt(btn.dataset.piIdx);
+
+  const el = document.getElementById('res-playin-matches'); if (!el) return;
+  const confBorder = {west:'border-left:3px solid var(--red)', east:'border-left:3px solid var(--blue2)'};
+
+  let html = '';
+  rounds.forEach(round => {
+    const allDone = round.matches.every(m => r[m.mk]!==undefined && r[m.mk]!==null);
+    html += `
+      <div style="margin-bottom:24px;">
+        <div style="margin-bottom:12px;">
+          <div style="font-family:'Bebas Neue';font-size:16px;letter-spacing:3px;color:var(--white);">${round.label}</div>
+          <div style="font-family:'Barlow Condensed';font-size:10px;letter-spacing:2px;color:var(--muted);margin-top:2px;">${round.sub}</div>
+        </div>
+        <div class="res-matches-grid">`;
+
+    round.matches.forEach(m => {
+      const has = r[m.mk]!==undefined && r[m.mk]!==null;
+      html += `<div class="match-card" style="${confBorder[m.conf]||''}">
+        <div class="match-head">${m.label}</div>
+        <div class="match-body">
+          <div class="match-lbl">VENCEDOR</div>
+          <div class="match-btns">
+            ${m.teams.map((t,i)=>`<button class="match-tbtn${r[m.mk]===i?' sel-g':''}"
+              data-pi-mk="${m.mk}" data-pi-idx="${i}">${t.logo} ${t.name}</button>`).join('')}
+          </div>
+          <div class="match-status">${has?'<span class="status-ok">✓ LANÇADO</span>':'<span class="status-pend">— AGUARDANDO</span>'}</div>
+        </div>
+      </div>`;
+    });
+
+    html += `</div></div>`; // .res-matches-grid + round div
+  });
+
+  el.innerHTML = html;
+
+  el.querySelectorAll('[data-pi-mk]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!S.results.playin) S.results.playin = {};
+      S.results.playin[btn.dataset.piMk] = parseInt(btn.dataset.piIdx);
       renderResPlayin();
     });
   });
