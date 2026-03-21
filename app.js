@@ -1064,13 +1064,17 @@ function calcScore(p) {
   const rp    = S.results.pre||{};
   const myPre = p.pre||{};
 
-  if (rp.champW  && myPre.champW  && myPre.champW ===rp.champW)  { d.pre+=3; total+=3; }
-  if (rp.champE  && myPre.champE  && myPre.champE ===rp.champE)  { d.pre+=3; total+=3; }
+  // Campeão conf Oeste (+3)
+  if (rp.champW && myPre.champW && myPre.champW===rp.champW) { d.pre+=3; total+=3; }
+  // Campeão conf Leste (+3)
+  if (rp.champE && myPre.champE && myPre.champE===rp.champE) { d.pre+=3; total+=3; }
+  // Campeão NBA (+3 se acertar, -3 se errar — só aplica quando resultado existir)
   if (rp.champNBA && myPre.champNBA) {
     if (myPre.champNBA===rp.champNBA) { d.nba_champ=3; total+=3; }
     else { d.nba_champ_neg=-3; total-=3; }
   }
 
+  // Play-In
   const piPicks = p.playin||{};
   Object.keys(PI_PTS).forEach(mk=>{
     const real=S.results.playin[mk];
@@ -1078,6 +1082,7 @@ function calcScore(p) {
     if (piPicks[mk]===real) { const pts=PI_PTS[mk]; total+=pts; d.pi+=pts; }
   });
 
+  // Playoffs
   const poPicks = p.playoffs||{};
   PO_KEYS.forEach(mk=>{
     const real=S.results.playoffs[mk]; if(!real||!real.winner) return;
@@ -1090,11 +1095,14 @@ function calcScore(p) {
     }
   });
 
-  [{field:'cfW',rA:'cfWA',rB:'cfWB'},{field:'cfE',rA:'cfEA',rB:'cfEB'}].forEach(({field,rA,rB})=>{
-    const myPicks=Array.isArray(myPre[field])?myPre[field]:[];
-    const realFA=rp[rA]||null, realFB=rp[rB]||null;
+  // Finalistas de Conf (+1 por cada acerto)
+  // Admin salva como rp.cfW = ['Time A', 'Time B'] e rp.cfE = ['Time A', 'Time B']
+  [{field:'cfW'},{field:'cfE'}].forEach(({field})=>{
+    const myPicks = Array.isArray(myPre[field]) ? myPre[field] : [];
+    const realFinalists = Array.isArray(rp[field]) ? rp[field] : [];
+    if (realFinalists.length === 0) return;
     myPicks.forEach(pick=>{
-      if((realFA&&pick===realFA)||(realFB&&pick===realFB)){d.conf_bonus+=1;total+=1;}
+      if (realFinalists.includes(pick)) { d.conf_bonus+=1; total+=1; }
     });
   });
 
