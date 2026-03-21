@@ -68,6 +68,30 @@ function r1p(t)     { return [[t[0],t[7]],[t[1],t[6]],[t[2],t[5]],[t[3],t[4]]]; 
 function esc(s)     { return s.replace(/'/g,"\\'"); }
 function teamByName(n){ return allTeams().find(t=>t.name===n)||{name:n,seed:'?',logo:'❓'}; }
 
+// ── LOGOS ──
+const TEAM_LOGOS = {
+  'OKC Thunder':'logos/okc.png','Houston Rockets':'logos/rockets.png',
+  'LA Clippers':'logos/clippers.png','Denver Nuggets':'logos/denver.png',
+  'Memphis Grizzlies':'logos/memphis.png','Minnesota Wolves':'logos/wolves.png',
+  'Golden State Warriors':'logos/warriors.png','Dallas Mavericks':'logos/dallas.png',
+  'Cleveland Cavaliers':'logos/cavaliers.png','Boston Celtics':'logos/boston.png',
+  'New York Knicks':'logos/knicks.png','Milwaukee Bucks':'logos/bucks.png',
+  'Detroit Pistons':'logos/pistons.png','Indiana Pacers':'logos/pacers.png',
+  'Atlanta Hawks':'logos/hawks.png','Orlando Magic':'logos/magic.png',
+  'Miami Heat':'logos/heat.gif','Phoenix Suns':'logos/suns.png',
+  'Chicago Bulls':'logos/bulls.png','Los Angeles Lakers':'logos/lakers.png',
+  'Sacramento Kings':'logos/kings.png','San Antonio Spurs':'logos/spurs.png',
+  'Utah Jazz':'logos/jazz.png','Washington Wizards':'logos/wizards.png',
+  'Portland Trail Blazers':'logos/blazers.png','New Orleans Pelicans':'logos/pelicans.png',
+  'Brooklyn Nets':'logos/nets.png','Toronto Raptors':'logos/raptors.png',
+  'Philadelphia 76ers':'logos/sixers.png','Charlotte Hornets':'logos/hornets.png',
+};
+function teamLogo(name, size=22) {
+  const src = TEAM_LOGOS[name];
+  if (src) return `<img src="${src}" alt="${name}" style="width:${size}px;height:${size}px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none'">`;
+  return `<span style="font-size:${Math.round(size*0.6)}px;">🏀</span>`;
+}
+
 // ═══════════════════════════════════════
 //  FIREBASE HELPERS
 // ═══════════════════════════════════════
@@ -406,7 +430,7 @@ function renderResPlayin() {
           <div class="match-lbl">VENCEDOR</div>
           <div class="match-btns">
             ${m.teams.map((t,i)=>`<button class="match-tbtn${r[m.mk]===i?' sel-g':''}"
-              data-pi-mk="${m.mk}" data-pi-idx="${i}">${t.logo} ${t.name}</button>`).join('')}
+              data-pi-mk="${m.mk}" data-pi-idx="${i}">${teamLogo(t.name,18)} ${t.name}</button>`).join('')}
           </div>
           <div class="match-status">${has?'<span class="status-ok">✓ LANÇADO</span>':'<span class="status-pend">— AGUARDANDO</span>'}</div>
         </div>
@@ -441,12 +465,12 @@ function renderResPre() {
   const rp=S.results.pre||{}, tw=getTW(), te=getTE(), all=allTeams();
   function singleBtns(field,teams) {
     return teams.map(t=>`<button class="match-tbtn${rp[field]===t.name?' sel-g':''}"
-      data-pre-field="${field}" data-pre-name="${esc(t.name)}" data-pre-single="1">${t.logo} ${t.name}</button>`).join('');
+      data-pre-field="${field}" data-pre-name="${esc(t.name)}" data-pre-single="1">${teamLogo(t.name,18)} ${t.name}</button>`).join('');
   }
   function multiBtns(field,teams) {
     const vals=Array.isArray(rp[field])?rp[field]:[];
     return teams.map(t=>`<button class="match-tbtn${vals.includes(t.name)?' sel-g':''}"
-      data-pre-field="${field}" data-pre-name="${esc(t.name)}" data-pre-single="0">${t.logo} ${t.name}</button>`).join('');
+      data-pre-field="${field}" data-pre-name="${esc(t.name)}" data-pre-single="0">${teamLogo(t.name,18)} ${t.name}</button>`).join('');
   }
   const defs=[
     {field:'cfW',   label:'FINALISTAS CONF OESTE (2 times)',multi:true, teams:tw},
@@ -541,7 +565,7 @@ function renderResPlayoffs() {
         <div class="match-body">
           <div class="match-lbl">VENCEDOR</div>
           <div class="match-btns">${teams.map(t=>`<button class="match-tbtn${res.winner===t?' sel-g':''}"
-            data-pow-mk="${mk}" data-pow-name="${esc(t)}">${teamByName(t).logo} ${t}</button>`).join('')}</div>
+            data-pow-mk="${mk}" data-pow-name="${esc(t)}">${teamLogo(t,18)} ${t}</button>`).join('')}</div>
           <div class="match-lbl" style="margin-top:8px;">PLACAR</div>
           <div class="score-btns">${SCORES.map(sc=>`<button class="score-btn${res.score===sc?' sel-g':''}"
             data-pos-mk="${mk}" data-pos-sc="${sc}">${sc}</button>`).join('')}</div>

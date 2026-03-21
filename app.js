@@ -25,6 +25,52 @@ let S = {
 // Apostador logado no momento
 let ME = null; // { id, name, pin, playin:{}, pre:{}, playoffs:{} }
 
+// ── MAPEAMENTO DE LOGOS ──
+// Coloque os arquivos na pasta /logos/ do repositório
+const TEAM_LOGOS = {
+  'OKC Thunder':          'logos/okc.png',
+  'Houston Rockets':      'logos/rockets.png',
+  'LA Clippers':          'logos/clippers.png',
+  'Denver Nuggets':       'logos/denver.png',
+  'Memphis Grizzlies':    'logos/memphis.png',
+  'Minnesota Wolves':     'logos/wolves.png',
+  'Golden State Warriors':'logos/warriors.png',
+  'Dallas Mavericks':     'logos/dallas.png',
+  'Cleveland Cavaliers':  'logos/cavaliers.png',
+  'Boston Celtics':       'logos/boston.png',
+  'New York Knicks':      'logos/knicks.png',
+  'Milwaukee Bucks':      'logos/bucks.png',
+  'Detroit Pistons':      'logos/pistons.png',
+  'Indiana Pacers':       'logos/pacers.png',
+  'Atlanta Hawks':        'logos/hawks.png',
+  'Orlando Magic':        'logos/magic.png',
+  'Miami Heat':           'logos/heat.gif',
+  'Phoenix Suns':         'logos/suns.png',
+  'Chicago Bulls':        'logos/bulls.png',
+  'Los Angeles Lakers':   'logos/lakers.png',
+  'Sacramento Kings':     'logos/kings.png',
+  'San Antonio Spurs':    'logos/spurs.png',
+  'Utah Jazz':            'logos/jazz.png',
+  'Washington Wizards':   'logos/wizards.png',
+  'Portland Trail Blazers':'logos/blazers.png',
+  'New Orleans Pelicans': 'logos/pelicans.png',
+  'Minnesota Timberwolves':'logos/wolves.png',
+  'Brooklyn Nets':        'logos/nets.png',
+  'Toronto Raptors':      'logos/raptors.png',
+  'Philadelphia 76ers':   'logos/sixers.png',
+  'Charlotte Hornets':    'logos/hornets.png',
+};
+
+// Retorna o HTML do logo — imagem se disponível, emoji como fallback
+function teamLogo(name, size=28) {
+  const src = TEAM_LOGOS[name];
+  if (src) {
+    return `<img src="${src}" alt="${name}" style="width:${size}px;height:${size}px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none';this.nextSibling.style.display='inline'">
+            <span style="display:none;font-size:${Math.round(size*0.55)}px;">🏀</span>`;
+  }
+  return `<span style="font-size:${Math.round(size*0.55)}px;">🏀</span>`;
+}
+
 // ── TIMES DEFAULT ──
 const DEFAULT_TW = [
   {seed:1,name:'OKC Thunder',logo:'⚡'},{seed:2,name:'Houston Rockets',logo:'🚀'},
@@ -449,7 +495,7 @@ function renderPlayin() {
           gap:11px;cursor:${cursor};background:${bg};transition:background .15s;
           border-bottom:1px solid rgba(255,255,255,.04);">
           <span style="font-family:'Bebas Neue';font-size:20px;color:var(--muted);min-width:24px;text-align:center;">${team.seed}</span>
-          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">${team.logo}</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${teamLogo(team.name,24)}</div>
           <div style="flex:1;font-family:'Barlow Condensed';font-weight:700;font-size:14px;">${team.name}</div>
           ${isPicked ? `<span style="font-size:14px;">${isDone?(isWinner?'✅':'❌'):'✓'}</span>` : ''}
           <div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;
@@ -536,7 +582,8 @@ function renderPreCards() {
     return teams.map(t => {
       const sel = picks[field]===t.name;
       return `<button class="pre-tbtn${sel?' '+cls:''}"${locked?' disabled':''} onclick="prePick('${field}','${esc(t.name)}',false)">
-        <span>${t.logo}</span><span>${t.name}</span></button>`;
+        <span style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;">${teamLogo(t.name,18)}</span>
+        <span>${t.name}</span></button>`;
     }).join('');
   }
   function multiBtns(field, teams, cls) {
@@ -544,7 +591,8 @@ function renderPreCards() {
       const vals = Array.isArray(picks[field])?picks[field]:[];
       const sel  = vals.includes(t.name);
       return `<button class="pre-tbtn${sel?' '+cls:''}"${locked?' disabled':''} onclick="prePick('${field}','${esc(t.name)}',true)">
-        <span>${t.logo}</span><span>${t.name}</span></button>`;
+        <span style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;">${teamLogo(t.name,18)}</span>
+        <span>${t.name}</span></button>`;
     }).join('');
   }
   function cfCount(field) {
@@ -759,7 +807,7 @@ function renderBracket() {
             border-left:${borderLeft};transition:background .15s;
             border-bottom:1px solid rgba(255,255,255,.04);">
             <span style="font-family:'Bebas Neue';font-size:18px;color:var(--muted);min-width:20px;text-align:center;">${team.seed||'?'}</span>
-            <div style="width:30px;height:30px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${team.logo}</div>
+            <div style="width:30px;height:30px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${teamLogo(team.name,22)}</div>
             <span style="font-family:'Barlow Condensed';font-weight:700;font-size:13px;flex:1;">${team.name}</span>
             ${isPicked?`<span style="font-size:12px;margin-right:4px;">${realR.winner?(isWinner?'✅':'❌'):'✓'}</span>`:''}
             <div style="width:15px;height:15px;border-radius:50%;flex-shrink:0;${dotStyle}"></div>
@@ -789,15 +837,15 @@ function renderBracket() {
             border-top:1px solid var(--border);letter-spacing:1px;
             color:${correct?'var(--green)':'var(--neg)'};">
             ${!pick.winner
-              ? `<span style="color:var(--muted);">Sem aposta — ${teamByName(realR.winner).logo} ${realR.winner} ${realR.score||''}</span>`
+              ? `<span style="color:var(--muted);">Sem aposta — ${teamLogo(realR.winner,16)} ${realR.winner} ${realR.score||''}</span>`
               : correct
                 ? (exactOk ? '🎯 +2 PTS — Vencedor e placar exato!' : '✓ +1 PT — Vencedor certo!')
-                : `✗ 0 PTS — Venceu: ${teamByName(realR.winner).logo} ${realR.winner} ${realR.score||''}`}
+                : `✗ 0 PTS — Venceu: ${teamLogo(realR.winner,16)} ${realR.winner} ${realR.score||''}`}
           </div>`;
         } else if (pick.winner && !open) {
           html += `<div style="font-family:'Barlow Condensed';font-size:11px;color:var(--muted);
             padding:8px 12px;border-top:1px solid var(--border);letter-spacing:1px;">
-            Seu palpite: ${teamByName(pick.winner).logo} <b style="color:var(--muted2);">${pick.winner}${pick.score?' '+pick.score:''}</b>
+            Seu palpite: ${teamLogo(pick.winner,16)} <b style="color:var(--muted2);">${pick.winner}${pick.score?' '+pick.score:''}</b>
           </div>`;
         }
       }
