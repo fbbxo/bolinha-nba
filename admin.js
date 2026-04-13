@@ -30,7 +30,7 @@ const db    = getFirestore(fbApp);
 let S = {
   players:[], results:{pre:{},playin:{},playoffs:{}},
   bracketTeams:null, playinTeams:null,
-  locked:{playin:false,pre:false}, openRounds:{}
+  locked:{}, deadlines:{}, openRounds:{}
 };
 
 // ═══════════════════════════════════════
@@ -106,7 +106,8 @@ async function fbLoad() {
       S.results      = d.results      || {pre:{},playin:{},playoffs:{}};
       S.bracketTeams = d.bracketTeams || null;
       S.playinTeams  = d.playinTeams  || null;
-      S.locked       = d.locked       || {playin:false,pre:false};
+      S.locked       = d.locked       || {};
+      S.deadlines    = d.deadlines    || {};
       S.openRounds   = d.openRounds   || {};
       S.players      = d.players      || [];
     }
@@ -124,7 +125,8 @@ async function fbSaveState() {
       results:      S.results      || {pre:{},playin:{},playoffs:{}},
       bracketTeams: S.bracketTeams || null,
       playinTeams:  S.playinTeams  || null,
-      locked:       S.locked       || {playin:false,pre:false},
+      locked:       S.locked       || {},
+      deadlines:    S.deadlines    || {},
       openRounds:   S.openRounds   || {},
     }, { merge: true });
   } catch(e) { toast('❌ Erro ao salvar!'); console.error(e); }
@@ -138,11 +140,10 @@ function fbListen() {
     S.results      = d.results      || {pre:{},playin:{},playoffs:{}};
     S.bracketTeams = d.bracketTeams || null;
     S.playinTeams  = d.playinTeams  || null;
-    S.locked       = d.locked       || {playin:false,pre:false};
+    S.locked       = d.locked       || {};
+    S.deadlines    = d.deadlines    || {};
     S.openRounds   = d.openRounds   || {};
     S.players      = d.players      || [];
-    const lkEl = document.getElementById('lock-controls');
-    if (lkEl) lkEl.innerHTML = '';
     renderSistema();
   });
 }
@@ -368,8 +369,25 @@ async function resetBracketTeams() {
 }
 
 // ═══════════════════════════════════════
-//  RESULTADOS PLAY-IN
+//  RESULTADOS PLAY-IN E CONTROLES DE LOCK
 // ═══════════════════════════════════════
+function getLockBarHTML(id) {
+  const lk = (S.locked || {})[id] || false;
+  const dl = (S.deadlines || {})[id] || '';
+  return `
+    <div class="lock-bar">
+      <div class="lock-bar-info">
+        <span style="font-family:'Bebas Neue';font-size:14px;color:${lk?'var(--neg)':'var(--green)'};letter-spacing:1px;">${lk?'🔒 ENCERRADO':'🟢 ABERTO PARA APOSTAS'}</span>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:8px;">
+          <span style="font-family:'Barlow Condensed';font-size:11px;color:var(--muted);letter-spacing:1px;">LIMITE:</span>
+          <input type="datetime-local" class="lock-bar-input" value="${dl}" onchange="updateDeadline('${id}', this.value)">
+        </div>
+      </div>
+      <button class="btn ${lk?'btn-outline':'btn-red'} btn-sm" onclick="toggleRoundLock('${id}')">${lk?'↺ REABRIR':'🔒 ENCERRAR'}</button>
+    </div>
+  `;
+}
+
 function renderResPlayin() {
   const pi = getPI(), r = S.results.playin||{};
 
@@ -386,6 +404,7 @@ function renderResPlayin() {
   // Rodadas separadas, igual ao visual dos playoffs
   const rounds = [
     {
+      id: 'pi_r1',
       label: 'JOGOS CLASSIFICATÓRIOS',
       sub:   'JOGO 1 E JOGO 2 — ABERTOS PARA APOSTAS IMEDIATAMENTE',
       matches: [
@@ -396,6 +415,7 @@ function renderResPlayin() {
       ]
     },
     {
+      id: 'pi_r2',
       label: 'JOGO DECISIVO',
       sub:   'APOSTAS LIBERADAS AUTOMATICAMENTE APÓS OS RESULTADOS DOS JOGOS 1 E 2',
       matches: [
@@ -417,6 +437,7 @@ function renderResPlayin() {
           <div style="font-family:'Bebas Neue';font-size:16px;letter-spacing:3px;color:var(--white);">${round.label}</div>
           <div style="font-family:'Barlow Condensed';font-size:10px;letter-spacing:2px;color:var(--muted);margin-top:2px;">${round.sub}</div>
         </div>
+        ${getLockBarHTML(round.id)}
         <div class="res-matches-grid">`;
 
     round.matches.forEach(m => {
@@ -480,7 +501,10 @@ function renderResPre() {
     {field:'champNBA',label:'CAMPEÃO NBA',                  multi:false,teams:all},
   ];
   const el=document.getElementById('res-pre-matches'); if(!el) return;
-  el.innerHTML=defs.map(d=>{
+  
+  let html = getLockBarHTML('pre');
+  html += '<div class="pre-res-grid">';
+  html += defs.map(d=>{
     const val=rp[d.field], has=d.multi?(Array.isArray(val)&&val.length>0):(!!val);
     return `<div class="match-card">
       <div class="match-head" style="display:flex;justify-content:space-between;align-items:center;">
@@ -492,6 +516,8 @@ function renderResPre() {
         <div class="match-status">${has?`<span class="status-ok">✓ ${d.multi?(val||[]).join(' e '):val}</span>`:'<span class="status-pend">— AGUARDANDO</span>'}</div>
       </div></div>`;
   }).join('');
+  html += '</div>';
+  el.innerHTML = html;
   el.querySelectorAll('[data-pre-field]').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const field=btn.dataset.preField, name=btn.dataset.preName, single=btn.dataset.preSingle==='1';
@@ -521,13 +547,13 @@ function renderResPre() {
 //  RESULTADOS PLAYOFFS
 // ═══════════════════════════════════════
 const PO_ROUNDS = [
-  {label:'1ª RODADA — OESTE',  conf:'west', matches:['wR1_0','wR1_1','wR1_2','wR1_3']},
-  {label:'1ª RODADA — LESTE',  conf:'east', matches:['eR1_0','eR1_1','eR1_2','eR1_3']},
-  {label:'SEMIFINAIS — OESTE', conf:'west', matches:['wR2_0','wR2_1']},
-  {label:'SEMIFINAIS — LESTE', conf:'east', matches:['eR2_0','eR2_1']},
-  {label:'FINAL CONF — OESTE', conf:'west', matches:['wR3_0']},
-  {label:'FINAL CONF — LESTE', conf:'east', matches:['eR3_0']},
-  {label:'🏆 NBA FINALS',       conf:'champ',matches:['finals']},
+  {id:'po_r1_w', label:'1ª RODADA — OESTE',  conf:'west', matches:['wR1_0','wR1_1','wR1_2','wR1_3']},
+  {id:'po_r1_e', label:'1ª RODADA — LESTE',  conf:'east', matches:['eR1_0','eR1_1','eR1_2','eR1_3']},
+  {id:'po_r2_w', label:'SEMIFINAIS — OESTE', conf:'west', matches:['wR2_0','wR2_1']},
+  {id:'po_r2_e', label:'SEMIFINAIS — LESTE', conf:'east', matches:['eR2_0','eR2_1']},
+  {id:'po_r3_w', label:'FINAL CONF — OESTE', conf:'west', matches:['wR3_0']},
+  {id:'po_r3_e', label:'FINAL CONF — LESTE', conf:'east', matches:['eR3_0']},
+  {id:'po_r4',   label:'🏆 NBA FINALS',       conf:'champ',matches:['finals']},
 ];
 
 function getMatchTeams(mk) {
@@ -552,7 +578,11 @@ function renderResPlayoffs() {
   const border={west:'border-left:3px solid var(--red)',east:'border-left:3px solid var(--blue2)',champ:'border-left:3px solid var(--gold)'};
   let html='';
   PO_ROUNDS.forEach(rd=>{
-    html+=`<div class="admin-card"><div class="ac-head"><div class="ac-title">${rd.label}</div></div><div class="ac-body"><div class="res-matches-grid">`;
+    html+=`<div class="admin-card">
+      <div class="ac-head"><div class="ac-title">${rd.label}</div></div>
+      <div class="ac-body">
+        ${getLockBarHTML(rd.id)}
+        <div class="res-matches-grid">`;
     rd.matches.forEach(mk=>{
       const res=r[mk]||{}, teams=getMatchTeams(mk);
       const isDone=!!res.winner&&!!res.score;
@@ -620,38 +650,27 @@ function renderSistema() {
     el.innerHTML=`Apostadores: <b style="color:var(--text)">${snap.size}</b><br>`+el.innerHTML;
   }).catch(()=>{});
 
-  const lkEl=document.getElementById('lock-controls'); if(!lkEl) return;
-  lkEl.innerHTML='';
-  const lk=S.locked||{};
-  [{id:'playin',label:'PLAY-IN'},{id:'pre',label:'PRÉ-PLAYOFFS'}].forEach(s=>{
-    const locked=lk[s.id]||false;
-    const row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);';
-    row.innerHTML=`
-      <div>
-        <div style="font-family:'Bebas Neue';font-size:15px;letter-spacing:2px;color:var(--white);">${s.label}</div>
-        <div style="font-family:'Barlow Condensed';font-size:11px;letter-spacing:2px;color:${locked?'var(--neg)':'var(--green)'};">
-          ${locked?'🔒 ENCERRADO':'🟢 ABERTO PARA APOSTAS'}</div>
-      </div>
-      <button class="btn ${locked?'btn-outline':'btn-red'} btn-sm">${locked?'↺ REABRIR':'🔒 ENCERRAR'}</button>`;
-    row.querySelector('button').addEventListener('click',()=>toggleLock(s.id));
-    lkEl.appendChild(row);
-  });
-  const note=document.createElement('div');
-  note.style.cssText='font-family:Barlow Condensed;font-size:11px;letter-spacing:2px;color:var(--muted);padding:10px 0;';
-  note.textContent='ℹ️ PLAYOFFS: apostas abrem automaticamente conforme resultados forem lançados em Playoffs / Séries';
-  lkEl.appendChild(note);
+  // Antigos controles de lock removidos daqui.
 }
 
-async function toggleLock(section) {
+async function toggleRoundLock(id) {
   if(!S.locked) S.locked={};
-  S.locked[section]=!(S.locked[section]||false);
+  S.locked[id] = !(S.locked[id]||false);
   await fbSaveState();
-  const lkEl=document.getElementById('lock-controls');
-  if(lkEl) lkEl.innerHTML='';
-  renderSistema();
-  toast(S.locked[section]?'🔒 Apostas encerradas!':'✅ Apostas reabertas!');
+  toast(S.locked[id] ? '🔒 Apostas encerradas!' : '✅ Apostas reabertas!');
+  renderResPlayin(); renderResPre(); renderResPlayoffs();
 }
+
+async function updateDeadline(id, value) {
+  if(!S.deadlines) S.deadlines={};
+  if(!value) delete S.deadlines[id];
+  else S.deadlines[id] = value;
+  await fbSaveState();
+  toast('⏰ Prazo atualizado com sucesso!');
+  renderResPlayin(); renderResPre(); renderResPlayoffs();
+}
+window.toggleRoundLock = toggleRoundLock;
+window.updateDeadline = updateDeadline;
 
 async function exportData() {
   const snap=await getDocs(PLAYERS_COL);

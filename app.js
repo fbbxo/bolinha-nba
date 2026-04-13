@@ -19,8 +19,35 @@ let S = {
   results: { pre:{}, playin:{}, playoffs:{} },
   bracketTeams: null,
   playinTeams: null,
-  locked: { playin: false, pre: false, playoffs: false }
+  locked: {},
+  deadlines: {},
 };
+
+// Retorna se uma rodada está bloqueada (manualmente ou por prazo)
+function isLocked(roundId) {
+  if (!S) return false;
+  if ((S.locked || {})[roundId]) return true;
+  const dlStr = (S.deadlines || {})[roundId];
+  if (dlStr) {
+    const dlDate = new Date(dlStr);
+    if (!isNaN(dlDate) && new Date() >= dlDate) return true;
+  }
+  return false;
+}
+
+// Retorna string bonitinha do prazo se existir
+function getDeadlineStr(roundId) {
+  const dlStr = (S.deadlines || {})[roundId];
+  if (!dlStr) return '';
+  const parts = dlStr.split('T');
+  if (parts.length !== 2) return '';
+  const dObj = new Date(dlStr);
+  if (isNaN(dObj)) return '';
+  const d = String(dObj.getDate()).padStart(2, '0');
+  const m = String(dObj.getMonth() + 1).padStart(2, '0');
+  const t = parts[1];
+  return `⏱️ FECHA EM ${d}/${m} ÀS ${t}`;
+}
 
 // Apostador logado no momento
 let ME = null; // { id, name, pin, playin:{}, pre:{}, playoffs:{} }
@@ -133,7 +160,8 @@ async function init() {
       S.results      = d.results      || {pre:{},playin:{},playoffs:{}};
       S.bracketTeams = d.bracketTeams || null;
       S.playinTeams  = d.playinTeams  || null;
-      S.locked       = d.locked       || {playin:false,pre:false};
+      S.locked       = d.locked       || {};
+      S.deadlines    = d.deadlines    || {};
       S.openRounds   = d.openRounds   || {r1:false,semi:false,cf:false,finals:false};
       S.players      = d.players      || [];
     }
@@ -279,13 +307,7 @@ function updateHeaderUser() {
 }
 
 function updateLockState() {
-  const lk = S.locked || {};
-  // Banner do play-in (estático no HTML)
-  document.getElementById('pi-locked-banner')?.classList.toggle('hidden', !(lk.playin||false));
-  // Os outros banners são gerenciados pela renderização dinâmica de cada seção
-  document.getElementById('pre-locked-banner')?.classList.toggle('hidden', !(lk.pre||false));
-  const preBtn = document.getElementById('pre-save-btn');
-  if (preBtn) preBtn.disabled = lk.pre||false;
+  // Banners globais removidos, os locks agora acontecem diretamente na renderização de cada bloco.
 }
 
 // ═══════════════════════════════════════
@@ -298,8 +320,9 @@ function listenGlobal() {
     S.results      = d.results      || {pre:{},playin:{},playoffs:{}};
     S.bracketTeams = d.bracketTeams || null;
     S.playinTeams  = d.playinTeams  || null;
-    S.locked       = d.locked       || {playin:false,pre:false};
-      S.openRounds   = d.openRounds   || {r1:false,semi:false,cf:false,finals:false};
+    S.locked       = d.locked       || {};
+    S.deadlines    = d.deadlines    || {};
+    S.openRounds   = d.openRounds   || {r1:false,semi:false,cf:false,finals:false};
     S.players      = d.players      || [];
     if (ME) {
       renderPlayin();
@@ -399,7 +422,8 @@ function getPlayinDecisiveTeams(conf) {
 
 function renderPlayin() {
   const el = document.getElementById('playin-render'); if (!el) return;
-  const locked = (S.locked||{}).playin || false;
+  const lockedR1 = isLocked('pi_r1');
+  const lockedR2 = isLocked('pi_r2');
   const rPI    = S.results.playin || {};
   const picks  = ME ? (ME.playin||{}) : {};
   const pi     = getPI();
@@ -435,6 +459,10 @@ function renderPlayin() {
       <div class="conf-label ${conf.cls}">${conf.label}</div>`;
 
     conf.games.forEach(game => {
+      const isDecisive = game.mk === 'w3' || game.mk === 'e3';
+      const locked     = isDecisive ? lockedR2 : lockedR1;
+      const dlStr      = isDecisive ? getDeadlineStr('pi_r2') : getDeadlineStr('pi_r1');
+      
       const realResult = rPI[game.mk]; // 0 ou 1 ou undefined
       const hasPick    = picks[game.mk] !== undefined && picks[game.mk] !== null;
       const myPick     = picks[game.mk];
@@ -464,7 +492,7 @@ function renderPlayin() {
       let statusColor, statusText;
       if (isDone)       { statusColor='var(--muted)'; statusText='✅ ENCERRADO'; }
       else if (locked)  { statusColor='var(--neg)';   statusText='🔒 APOSTAS ENCERRADAS'; }
-      else              { statusColor='var(--green)';  statusText='🟢 APOSTAR'; }
+      else              { statusColor='var(--green)'; statusText= dlStr ? `${dlStr} — 🟢 APOSTAR` : '🟢 APOSTAR'; }
 
       html += `<div class="mc ${conf.cls}" style="margin-bottom:12px;">
         <div class="mh">
@@ -552,6 +580,8 @@ function renderPlayin() {
   // Botão salvar global — aparece se há qualquer pick não salvo em jogo aberto
   const hasAnyOpenPick = confs.some(c =>
     c.games.some(g => {
+      const isDecisive = g.mk === 'w3' || g.mk === 'e3';
+      const locked     = isDecisive ? lockedR2 : lockedR1;
       const rr = rPI[g.mk];
       const open = !locked && Array.isArray(g.teams) && (rr===undefined||rr===null);
       return open && (picks[g.mk]!==undefined && picks[g.mk]!==null);
@@ -569,9 +599,11 @@ function renderPlayin() {
   el.querySelectorAll('[data-pi-mk]').forEach(row => {
     row.addEventListener('click', () => {
       if (!ME) return;
-      if ((S.locked||{}).playin) { toast('🔒 Apostas encerradas!'); return; }
+      const mk = row.dataset.piMk;
+      const isDecisive = mk === 'w3' || mk === 'e3';
+      if (isDecisive ? lockedR2 : lockedR1) { toast('🔒 Apostas encerradas!'); return; }
       if (!ME.playin) ME.playin = {};
-      ME.playin[row.dataset.piMk] = parseInt(row.dataset.piIdx);
+      ME.playin[mk] = parseInt(row.dataset.piIdx);
       renderPlayin();
     });
   });
@@ -591,7 +623,7 @@ function loadPlayin() {
 // ═══════════════════════════════════════
 function renderPreCards() {
   const picks = ME ? (ME.pre||{}) : {};
-  const locked = (S.locked||{}).pre || false;
+  const locked = isLocked('pre');
   const el = document.getElementById('pre-cards');
   const tw = getTW(), te = getTE(), all = allTeams();
 
@@ -619,7 +651,14 @@ function renderPreCards() {
       : `<div style="font-family:'Barlow Condensed';font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:8px;">SELECIONE ${v.length}/2 TIMES</div>`;
   }
 
-  el.innerHTML = `
+  let topBanner = '';
+  if (locked) {
+    topBanner = `<div style="grid-column:1/-1; margin-bottom:4px;color:var(--neg);border-color:var(--neg);background:var(--neg-bg);text-align:center;padding:10px;border-radius:8px;border:1px solid;font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;">🔒 APOSTAS ENCERRADAS</div>`;
+  } else if (getDeadlineStr('pre')) {
+    topBanner = `<div style="grid-column:1/-1; margin-bottom:4px;color:var(--green);border-color:var(--green);background:var(--green-bg);text-align:center;padding:10px;border-radius:8px;border:1px solid;font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;">${getDeadlineStr('pre')}</div>`;
+  }
+
+  el.innerHTML = topBanner + `
     <div class="pre-card gold-card">
       <div class="pre-card-head"><span>FINALISTAS CONF OESTE (escolha 2)</span><span class="bonus-tag pos">+1 PT CADA</span></div>
       <div class="pre-card-body"><div class="pre-team-grid">${multiBtns('cfW',tw,'sel-gold')}</div>${cfCount('cfW')}</div>
@@ -644,7 +683,7 @@ function renderPreCards() {
 
 window.prePick = function(field, teamName, multi) {
   if (!ME) return;
-  if ((S.locked||{}).pre) { toast('🔒 Apostas encerradas!'); return; }
+  if (isLocked('pre')) { toast('🔒 Apostas encerradas!'); return; }
   if (!ME.pre) ME.pre = {};
   if (!multi) {
     ME.pre[field] = teamName;
@@ -711,19 +750,28 @@ function getSeriesTeams(mk) {
   return (map[mk]||[null,null]).map(t=>t||{name:'?',seed:'?',logo:'❓'});
 }
 
+function getPlayoffLockId(mk) {
+  if (mk.startsWith('wR1')) return 'po_r1_w';
+  if (mk.startsWith('eR1')) return 'po_r1_e';
+  if (mk.startsWith('wR2')) return 'po_r2_w';
+  if (mk.startsWith('eR2')) return 'po_r2_e';
+  if (mk.startsWith('wR3')) return 'po_r3_w';
+  if (mk.startsWith('eR3')) return 'po_r3_e';
+  if (mk === 'finals') return 'po_r4';
+  return '';
+}
+
 function renderBracket() {
   const outer = document.getElementById('bracket-outer');
   if (!outer) return;
   const picks       = ME ? (ME.playoffs||{}) : {};
   const resPlayoffs = S.results.playoffs || {};
-  const globalLocked = (S.locked||{}).playoffs || false;
-
   // Uma série está ABERTA para apostar se:
   // 1. Os dois times dela são conhecidos (resultado das séries anteriores lançado)
   // 2. A série ainda não tem resultado lançado pelo admin
-  // 3. As apostas globais não estão encerradas
+  // 3. As apostas daquela rodada não estão encerradas (manualmente ou por hora final)
   function isSeriesOpen(mk) {
-    if (globalLocked) return false;
+    if (isLocked(getPlayoffLockId(mk))) return false;
     if (resPlayoffs[mk]?.winner) return false; // série já terminou
     const teams = getSeriesTeams(mk);
     // Ambos os times precisam ser conhecidos (não '?')
@@ -766,6 +814,7 @@ function renderBracket() {
     const open       = isSeriesOpen(mk);
     const teamsKnown = teams.every(t => t && t.name !== '?');
     const confBorder = conf==='west'?'var(--red)':conf==='east'?'var(--blue2)':'var(--gold)';
+    const dlStr      = getDeadlineStr(getPlayoffLockId(mk));
     const seriesLabels = {
       wR1_0:'1v8',wR1_1:'2v7',wR1_2:'3v6',wR1_3:'4v5',
       eR1_0:'1v8',eR1_1:'2v7',eR1_2:'3v6',eR1_3:'4v5',
@@ -780,7 +829,7 @@ function renderBracket() {
       <div style="padding:6px 12px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--border);
         font-family:'Barlow Condensed';font-size:10px;letter-spacing:3px;color:var(--muted);
         display:flex;justify-content:space-between;align-items:center;">
-        <span>${seriesLabels[mk]||mk}</span>
+        <span>${seriesLabels[mk]||mk} ${dlStr && open ? `• <span style="color:var(--gold);">${dlStr}</span>` : ''}</span>
         <span style="color:${open?'var(--green)':realR.winner?'var(--muted)':'var(--muted)'};">
           ${open?'🟢 APOSTAR':realR.winner?'✅':'🔒'}
         </span>
@@ -1189,6 +1238,7 @@ window.addEventListener('offline', ()=>setOnline(false));
 
 function bPick(mk, teamName, conf) {
   if (!ME) return;
+  if (isLocked(getPlayoffLockId(mk))) { toast('🔒 Apostas encerradas!'); return; }
   if (!ME.playoffs) ME.playoffs = {};
   const cur = ME.playoffs[mk]||{};
   ME.playoffs[mk] = { winner: teamName, score: cur.winner===teamName ? (cur.score||'') : '' };
@@ -1197,6 +1247,7 @@ function bPick(mk, teamName, conf) {
 
 function setPlacar(mk, sc) {
   if (!ME) return;
+  if (isLocked(getPlayoffLockId(mk))) { toast('🔒 Apostas encerradas!'); return; }
   if (!ME.playoffs) ME.playoffs = {};
   if (!ME.playoffs[mk]) ME.playoffs[mk] = {};
   ME.playoffs[mk].score = sc;

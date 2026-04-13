@@ -204,3 +204,31 @@ header{position:sticky;top:0;z-index:100;background:rgba(7,7,13,.96);backdrop-fi
   transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
 .toast.show{transform:translateY(0);opacity:1;}
 hr.div{border:none;border-top:1px solid var(--border);margin:24px 0;}
+
+/* ── LOCK BAR ── */
+.lock-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+}
+.lock-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.lock-bar-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 11px;
+  outline: none;
+}
+.lock-bar-input:focus { border-color: var(--gold); }
