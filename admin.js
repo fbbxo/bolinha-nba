@@ -564,8 +564,8 @@ function getMatchTeams(mk) {
     wR1_2:[wR1[2][0].name,wR1[2][1].name],wR1_3:[wR1[3][0].name,wR1[3][1].name],
     eR1_0:[eR1[0][0].name,eR1[0][1].name],eR1_1:[eR1[1][0].name,eR1[1][1].name],
     eR1_2:[eR1[2][0].name,eR1[2][1].name],eR1_3:[eR1[3][0].name,eR1[3][1].name],
-    wR2_0:[rr('wR1_0'),rr('wR1_1')],wR2_1:[rr('wR1_2'),rr('wR1_3')],
-    eR2_0:[rr('eR1_0'),rr('eR1_1')],eR2_1:[rr('eR1_2'),rr('eR1_3')],
+    wR2_0:[rr('wR1_0'),rr('wR1_3')],wR2_1:[rr('wR1_1'),rr('wR1_2')],
+    eR2_0:[rr('eR1_0'),rr('eR1_3')],eR2_1:[rr('eR1_1'),rr('eR1_2')],
     wR3_0:[rr('wR2_0'),rr('wR2_1')],eR3_0:[rr('eR2_0'),rr('eR2_1')],
     finals:[rr('wR3_0'),rr('eR3_0')],
   };
