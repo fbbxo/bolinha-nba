@@ -736,18 +736,39 @@ function resolveWinnerReal(mk) {
 function getSeriesTeams(mk) {
   const tw = getTW(), te = getTE();
   const wR1 = r1p(tw), eR1 = r1p(te);
-  function rr(k){ const w=resolveWinnerReal(k); return w?teamByName(w):null; }
-  const map = {
+  function rr(k){ return (S.results.playoffs[k]||{}).winner; }
+  const baseMap = {
     wR1_0:[wR1[0][0],wR1[0][1]], wR1_1:[wR1[1][0],wR1[1][1]],
     wR1_2:[wR1[2][0],wR1[2][1]], wR1_3:[wR1[3][0],wR1[3][1]],
     eR1_0:[eR1[0][0],eR1[0][1]], eR1_1:[eR1[1][0],eR1[1][1]],
     eR1_2:[eR1[2][0],eR1[2][1]], eR1_3:[eR1[3][0],eR1[3][1]],
-    wR2_0:[rr('wR1_0'),rr('wR1_3')], wR2_1:[rr('wR1_1'),rr('wR1_2')],
-    eR2_0:[rr('eR1_0'),rr('eR1_3')], eR2_1:[rr('eR1_1'),rr('eR1_2')],
-    wR3_0:[rr('wR2_0'),rr('wR2_1')], eR3_0:[rr('eR2_0'),rr('eR2_1')],
-    finals:[rr('wR3_0'),rr('eR3_0')],
   };
-  return (map[mk]||[null,null]).map(t=>t||{name:'?',seed:'?',logo:'❓'});
+  const SRC = {
+    wR2_0:['wR1_0','wR1_3'],wR2_1:['wR1_1','wR1_2'],
+    eR2_0:['eR1_0','eR1_3'],eR2_1:['eR1_1','eR1_2'],
+    wR3_0:['wR2_0','wR2_1'],eR3_0:['eR2_0','eR2_1'],
+    finals:['wR3_0','eR3_0']
+  };
+  function poss(k) {
+    if(rr(k)) return [teamByName(rr(k))];
+    if(baseMap[k]) return baseMap[k];
+    if(SRC[k]) return [...poss(SRC[k][0]), ...poss(SRC[k][1])];
+    return [];
+  }
+  if (baseMap[mk]) {
+    return [
+      { resolved: baseMap[mk][0], possible: [baseMap[mk][0]] },
+      { resolved: baseMap[mk][1], possible: [baseMap[mk][1]] }
+    ];
+  }
+  if (SRC[mk]) {
+    const r1 = rr(SRC[mk][0]), r2 = rr(SRC[mk][1]);
+    return [
+      { resolved: r1?teamByName(r1):null, possible: poss(SRC[mk][0]) },
+      { resolved: r2?teamByName(r2):null, possible: poss(SRC[mk][1]) }
+    ];
+  }
+  return [{resolved:null,possible:[]},{resolved:null,possible:[]}];
 }
 
 function getPlayoffLockId(mk) {
@@ -774,13 +795,13 @@ function renderBracket() {
     if (isLocked(getPlayoffLockId(mk))) return false;
     if (resPlayoffs[mk]?.winner) return false; // série já terminou
     const teams = getSeriesTeams(mk);
-    // Ambos os times precisam ser conhecidos (não '?')
-    return teams.every(t => t && t.name !== '?');
+    // Ambos os times precisam ser conhecidos
+    return teams.every(t => t && t.resolved);
   }
 
   // Verifica se pelo menos uma série da 1ª rodada tem times (playoffs começaram)
   const r1Teams = getSeriesTeams('wR1_0');
-  const playoffsStarted = r1Teams.some(t => t && t.name !== '?');
+  const playoffsStarted = r1Teams.some(t => t && t.resolved);
 
   if (!playoffsStarted) {
     outer.innerHTML = `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:36px;text-align:center;">
@@ -812,7 +833,7 @@ function renderBracket() {
     const pick       = picks[mk]||{};
     const realR      = resPlayoffs[mk]||{};
     const open       = isSeriesOpen(mk);
-    const teamsKnown = teams.every(t => t && t.name !== '?');
+    const teamsKnown = teams.every(t => t && t.resolved);
     const confBorder = conf==='west'?'var(--red)':conf==='east'?'var(--blue2)':'var(--gold)';
     const dlStr      = getDeadlineStr(getPlayoffLockId(mk));
     const seriesLabels = {
@@ -836,10 +857,29 @@ function renderBracket() {
       </div>`;
 
     if (!teamsKnown) {
-      html += `<div style="padding:14px 12px;text-align:center;font-family:'Barlow Condensed';
-        font-size:11px;letter-spacing:2px;color:var(--muted);">🔒 A definir</div>`;
+      teams.forEach(tObj => {
+        if (tObj.resolved) {
+          const team = tObj.resolved;
+          html += `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;
+            background:transparent;border-bottom:1px solid rgba(255,255,255,.04);opacity:0.6;">
+            <span style="font-family:'Bebas Neue';font-size:16px;color:var(--muted);min-width:18px;text-align:center;">${team.seed||'?'}</span>
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${teamLogo(team.name,20)}</div>
+            <span style="font-family:'Barlow Condensed';font-weight:700;font-size:13px;flex:1;">${team.name}</span>
+          </div>`;
+        } else {
+          html += `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;
+            background:transparent;border-bottom:1px solid rgba(255,255,255,.04);opacity:0.6;">
+            <span style="font-family:'Bebas Neue';font-size:16px;color:var(--muted);min-width:18px;text-align:center;">?</span>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+              ${tObj.possible.map(p=>`<div style="width:28px;height:28px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${teamLogo(p.name,20)}</div>`).join('<span style="font-size:10px;color:var(--muted);margin:0 2px;">ou</span>')}
+            </div>
+            <span style="font-family:'Barlow Condensed';font-weight:700;font-size:13px;flex:1;color:var(--muted);">A DEFINIR</span>
+          </div>`;
+        }
+      });
     } else {
-      teams.forEach(team => {
+      teams.forEach(tObj => {
+        const team = tObj.resolved;
         const isPicked  = pick.winner===team.name;
         const isWinner  = realR.winner===team.name;
         const isCorrect = isPicked && isWinner;
@@ -952,7 +992,7 @@ function renderBracket() {
   const hasAnyRound = roundIds.some(rid =>
     [...(WEST_SERIES[rid]||[]),...(EAST_SERIES[rid]||[])].some(mk => {
       const t = getSeriesTeams(mk);
-      return t.some(x => x && x.name !== '?');
+      return t.some(x => x && x.resolved);
     })
   );
 

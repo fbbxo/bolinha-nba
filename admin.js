@@ -558,18 +558,38 @@ const PO_ROUNDS = [
 
 function getMatchTeams(mk) {
   const tw=getTW(),te=getTE(),wR1=r1p(tw),eR1=r1p(te);
-  function rr(k){ return (S.results.playoffs[k]||{}).winner||'?'; }
-  const map={
+  function rr(k){ return (S.results.playoffs[k]||{}).winner; }
+  const baseMap = {
     wR1_0:[wR1[0][0].name,wR1[0][1].name],wR1_1:[wR1[1][0].name,wR1[1][1].name],
     wR1_2:[wR1[2][0].name,wR1[2][1].name],wR1_3:[wR1[3][0].name,wR1[3][1].name],
     eR1_0:[eR1[0][0].name,eR1[0][1].name],eR1_1:[eR1[1][0].name,eR1[1][1].name],
     eR1_2:[eR1[2][0].name,eR1[2][1].name],eR1_3:[eR1[3][0].name,eR1[3][1].name],
-    wR2_0:[rr('wR1_0'),rr('wR1_3')],wR2_1:[rr('wR1_1'),rr('wR1_2')],
-    eR2_0:[rr('eR1_0'),rr('eR1_3')],eR2_1:[rr('eR1_1'),rr('eR1_2')],
-    wR3_0:[rr('wR2_0'),rr('wR2_1')],eR3_0:[rr('eR2_0'),rr('eR2_1')],
-    finals:[rr('wR3_0'),rr('eR3_0')],
   };
-  return map[mk]||['?','?'];
+  const SRC = {
+    wR2_0:['wR1_0','wR1_3'],wR2_1:['wR1_1','wR1_2'],
+    eR2_0:['eR1_0','eR1_3'],eR2_1:['eR1_1','eR1_2'],
+    wR3_0:['wR2_0','wR2_1'],eR3_0:['eR2_0','eR2_1'],
+    finals:['wR3_0','eR3_0']
+  };
+  function poss(k) {
+    if(rr(k)) return [rr(k)];
+    if(baseMap[k]) return baseMap[k];
+    if(SRC[k]) return [...poss(SRC[k][0]), ...poss(SRC[k][1])];
+    return [];
+  }
+  if (baseMap[mk]) {
+    return [
+      { resolved: baseMap[mk][0], possible: [baseMap[mk][0]] },
+      { resolved: baseMap[mk][1], possible: [baseMap[mk][1]] }
+    ];
+  }
+  if (SRC[mk]) {
+    return [
+      { resolved: rr(SRC[mk][0])||null, possible: poss(SRC[mk][0]) },
+      { resolved: rr(SRC[mk][1])||null, possible: poss(SRC[mk][1]) }
+    ];
+  }
+  return [{resolved:null,possible:[]},{resolved:null,possible:[]}];
 }
 
 function renderResPlayoffs() {
@@ -584,18 +604,28 @@ function renderResPlayoffs() {
         ${getLockBarHTML(rd.id)}
         <div class="res-matches-grid">`;
     rd.matches.forEach(mk=>{
-      const res=r[mk]||{}, teams=getMatchTeams(mk);
+      const res=r[mk]||{}, tObjs=getMatchTeams(mk);
       const isDone=!!res.winner&&!!res.score;
       const hasAny=!!res.winner||!!res.score;
+      const h1 = tObjs[0].resolved ? tObjs[0].resolved : tObjs[0].possible.map(p=>teamLogo(p,16)).join(' <span style="font-size:10px;opacity:0.5;">ou</span> ');
+      const h2 = tObjs[1].resolved ? tObjs[1].resolved : tObjs[1].possible.map(p=>teamLogo(p,16)).join(' <span style="font-size:10px;opacity:0.5;">ou</span> ');
       html+=`<div class="match-card" style="${border[rd.conf]||''}">
         <div class="match-head" style="display:flex;justify-content:space-between;align-items:center;">
-          <span>${teams[0]} vs ${teams[1]}</span>
+          <span style="display:flex;align-items:center;gap:6px;">${h1} <span style="color:var(--muted);margin:0 4px;">vs</span> ${h2}</span>
           ${hasAny?`<button class="btn btn-outline btn-sm" style="font-size:9px;padding:2px 8px;color:var(--muted);border-color:var(--border2);" data-clear-po="${mk}">✕ LIMPAR</button>`:''}
         </div>
         <div class="match-body">
           <div class="match-lbl">VENCEDOR</div>
-          <div class="match-btns">${teams.map(t=>`<button class="match-tbtn${res.winner===t?' sel-g':''}"
-            data-pow-mk="${mk}" data-pow-name="${esc(t)}">${teamLogo(t,18)} ${t}</button>`).join('')}</div>
+          <div class="match-btns">${tObjs.map(tObj=>{
+            if (tObj.resolved) {
+              return `<button class="match-tbtn${res.winner===tObj.resolved?' sel-g':''}"
+                data-pow-mk="${mk}" data-pow-name="${esc(tObj.resolved)}">${teamLogo(tObj.resolved,18)} ${tObj.resolved}</button>`;
+            } else {
+              return `<button class="match-tbtn" disabled style="opacity:0.6;cursor:not-allowed;">
+                ${tObj.possible.map(p=>teamLogo(p,18)).join(' ')} <span style="font-size:11px;margin-left:6px;color:var(--muted);">?</span>
+              </button>`;
+            }
+          }).join('')}</div>
           <div class="match-lbl" style="margin-top:8px;">PLACAR</div>
           <div class="score-btns">${SCORES.map(sc=>`<button class="score-btn${res.score===sc?' sel-g':''}"
             data-pos-mk="${mk}" data-pos-sc="${sc}">${sc}</button>`).join('')}</div>
